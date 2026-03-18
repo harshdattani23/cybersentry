@@ -10,6 +10,11 @@ export interface UserData {
     role: "user" | "admin";
     approved_to_publish: boolean;
     created_at?: string;
+    // New Profile Fields
+    name?: string;
+    designation?: string;
+    bio?: string;
+    photo_url?: string;
     // Map existing structure for compatibility with older code
     uid: string;
     approvedToPublish: boolean;

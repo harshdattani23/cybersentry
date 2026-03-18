@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import dynamic from 'next/dynamic';
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-import 'react-quill/dist/quill.snow.css';
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+import 'react-quill-new/dist/quill.snow.css';
 
 import {
     Card,
@@ -59,7 +59,6 @@ export default function PublishNewsPage() {
         content: "",
         sourceName: "",
         sourceUrl: "",
-        authorName: "",
     });
 
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -112,7 +111,7 @@ export default function PublishNewsPage() {
                 content: formData.content,
                 source_name: formData.sourceName,
                 source_url: formData.sourceUrl || null,
-                author_name: formData.authorName,
+                author_name: userData?.name || user?.email || "Unknown",
                 author_id: user?.id,
                 image_url: imageUrl,
             };
@@ -156,7 +155,6 @@ export default function PublishNewsPage() {
                 content: "",
                 sourceName: "",
                 sourceUrl: "",
-                authorName: "",
             });
             setImageFile(null);
 
@@ -319,15 +317,14 @@ export default function PublishNewsPage() {
 
                         {/* Full Article Content */}
                         <div className="space-y-2">
-                            <Label htmlFor="content">Full Article Content <span className="text-red-500">*</span></Label>
-                            <div className="bg-white rounded-md border text-slate-900 border-slate-200">
+                            <Label htmlFor="content" className="text-base font-semibold">Full Article Content <span className="text-red-500">*</span></Label>
+                            <div className="react-quill-wrapper">
                                 <ReactQuill
                                     theme="snow"
                                     value={formData.content}
                                     onChange={handleContentChange}
                                     modules={quillModules}
                                     placeholder="Write the full news content here..."
-                                    className="min-h-[300px]"
                                 />
                             </div>
                         </div>
@@ -374,10 +371,9 @@ export default function PublishNewsPage() {
                             <Label htmlFor="authorName">Author Name <span className="text-red-500">*</span></Label>
                             <Input
                                 id="authorName"
-                                required
-                                placeholder="Your Full Name"
-                                value={formData.authorName}
-                                onChange={handleInputChange}
+                                readOnly
+                                className="bg-slate-100 text-slate-500 cursor-not-allowed"
+                                value={userData?.name || user?.email || "Loading..."}
                             />
                         </div>
 
