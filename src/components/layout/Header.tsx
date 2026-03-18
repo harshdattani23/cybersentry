@@ -83,6 +83,11 @@ export function Header() {
         </div>
       </div>
 
+      {/* Optional: Tiny deployment indicator */}
+      <div className="absolute top-0 right-0 p-1 text-[10px] text-slate-300 opacity-50 select-none pointer-events-none">
+        v1.0.1 (CI/CD Test)
+      </div>
+
       {/* Navigation */}
       <nav className="bg-slate-100 border-t border-slate-200">
         <div className="container mx-auto px-4">
