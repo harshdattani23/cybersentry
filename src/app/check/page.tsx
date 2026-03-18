@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, AlertTriangle, CheckCircle2, XCircle, ArrowRight, ShieldAlert, Loader2 } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle2, ArrowRight, ShieldAlert, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 type CheckStatus = 'idle' | 'searching' | 'match' | 'review' | 'clean';
@@ -151,7 +151,7 @@ export default function ScamCheckPage() {
                                                     <span className="text-xs text-slate-400">ID: CS-IND-2024-8892</span>
                                                 </div>
                                                 <h4 className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
-                                                    Fake 'Electricity Bill' Disconnection SMS
+                                                    Fake &apos;Electricity Bill&apos; Disconnection SMS
                                                 </h4>
                                                 <div className="text-xs text-slate-500 mt-1 flex items-center">
                                                     <span>Smishing / SMS Fraud</span>

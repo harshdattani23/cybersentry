@@ -19,8 +19,7 @@ import {
     Loader2
 } from "lucide-react";
 import Link from "next/link";
-import { collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 // Define the shape of our data
 interface FraudReport {
@@ -40,42 +39,60 @@ export default function CasesPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        try {
-            const q = query(
-                collection(db, "fraud_reports"),
-                where("is_public", "==", true),
-                orderBy("created_at", "desc")
-            );
+        const fetchCases = async () => {
+            try {
+                setIsLoading(true);
+                const { data, error } = await supabase
+                    .from("cases")
+                    .select("*")
+                    .eq("status", "published")
+                    .order("created_at", { ascending: false });
 
-            // Real-time listener using Firestore onSnapshot
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const data = snapshot.docs.map(doc => {
-                    const docData = doc.data();
-                    return {
-                        id: doc.id,
-                        ...docData,
-                        created_at: docData.created_at instanceof Timestamp
-                            ? docData.created_at.toDate().toISOString()
-                            : docData.created_at || "",
-                    } as FraudReport;
-                });
-
-                setCases(data);
-                setIsLoading(false);
-            }, (err) => {
+                if (error) throw error;
+                setCases(data as FraudReport[] || []);
+            } catch (err) {
                 console.error("Error fetching cases:", err);
                 setError("Failed to load cases. Please try again later.");
+            } finally {
                 setIsLoading(false);
-            });
+            }
+        };
+
+        const setupListener = () => {
+            // Initial fetch
+            fetchCases();
+
+            // Real-time listener using Supabase
+            const channel = supabase
+                .channel("public:cases")
+                .on("postgres_changes", { event: "*", schema: "public", table: "cases" }, (payload) => {
+                    fetchCases();
+                })
+                .subscribe();
 
             return () => {
-                unsubscribe();
+                supabase.removeChannel(channel);
             };
-        } catch (err: any) {
+        };
+
+        let unsubscribeFn: () => void;
+
+        try {
+            unsubscribeFn = setupListener();
+        } catch (err) {
             console.error("Error setting up cases listener:", err);
-            setError("Failed to load cases. Please try again later.");
-            setIsLoading(false);
+            // Wait for the next tick to set state, avoiding synchronous state updates during render
+            setTimeout(() => {
+                setError("Failed to load cases. Please try again later.");
+                setIsLoading(false);
+            }, 0);
         }
+
+        return () => {
+            if (unsubscribeFn) {
+                unsubscribeFn();
+            }
+        };
     }, []);
 
     // Helper functions for UI mapping

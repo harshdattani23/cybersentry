@@ -1,5 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     ShieldAlert,
     Smartphone,
@@ -51,7 +50,7 @@ export default function ResourcesPage() {
                                     Fraudsters request money via UPI links or QR codes, often claiming to be sending a payment. Remember: You never need to enter your PIN to receive money.
                                 </p>
                                 <div className="mt-4 bg-slate-50 p-3 rounded text-xs text-slate-500 italic border border-slate-100">
-                                    "Scan this code to receive your ₹2,000 refund."
+                                    &quot;Scan this code to receive your ₹2,000 refund.&quot;
                                 </div>
                             </CardContent>
                         </Card>
@@ -71,7 +70,7 @@ export default function ResourcesPage() {
                                     Fake emails or messages pretending to be from banks, tax departments, or popular services, asking you to click a link and verify your account details.
                                 </p>
                                 <div className="mt-4 bg-slate-50 p-3 rounded text-xs text-slate-500 italic border border-slate-100">
-                                    "Your account will be blocked today. Click here to update PAN."
+                                    &quot;Your account will be blocked today. Click here to update PAN.&quot;
                                 </div>
                             </CardContent>
                         </Card>
@@ -91,7 +90,7 @@ export default function ResourcesPage() {
                                     Scammers call or text claiming your KYC is pending and service will be disconnected. They may ask you to download a screen-sharing app like AnyDesk.
                                 </p>
                                 <div className="mt-4 bg-slate-50 p-3 rounded text-xs text-slate-500 italic border border-slate-100">
-                                    "Download QuickSupport to complete your KYC verification now."
+                                    &quot;Download QuickSupport to complete your KYC verification now.&quot;
                                 </div>
                             </CardContent>
                         </Card>
@@ -108,7 +107,7 @@ export default function ResourcesPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm text-slate-600 leading-relaxed">
-                                    Sellers asking for advance payments for goods that don't exist, or buyers claiming to have paid extra and asking for a refund via QR code.
+                                    Sellers asking for advance payments for goods that don&apos;t exist, or buyers claiming to have paid extra and asking for a refund via QR code.
                                 </p>
                             </CardContent>
                         </Card>
@@ -153,7 +152,7 @@ export default function ResourcesPage() {
                                 <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center font-bold text-purple-600 bg-purple-50 rounded-full mr-4">1</span>
                                 <div>
                                     <h4 className="font-bold text-slate-900">Urgency and Panic</h4>
-                                    <p className="text-sm text-slate-600 mt-1">Scammers create a false sense of urgency (e.g., "Your electricity will be cut tonight") to make you act without thinking.</p>
+                                    <p className="text-sm text-slate-600 mt-1">Scammers create a false sense of urgency (e.g., &quot;Your electricity will be cut tonight&quot;) to make you act without thinking.</p>
                                 </div>
                             </li>
                             <li className="flex items-start">

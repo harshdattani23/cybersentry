@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { createClient } from "@supabase/supabase-js";
 
-// Server-side Firebase client
-const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
-};
-
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Initialize a Supabase client using anon key
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request: NextRequest) {
     try {
@@ -28,6 +19,7 @@ export async function POST(request: NextRequest) {
             source_name,
             source_url,
             author_name,
+            author_id,
             image_url,
         } = body;
 
@@ -50,19 +42,16 @@ export async function POST(request: NextRequest) {
             category,
             summary,
             content,
-            source_name,
-            author_name,
+            source: source_name, // Schema column is called "source" not "source_name"
+            author_email: author_name, // Schema column is "author_email", mapping author_name to it
+            author_id: author_id || null, // Needs to be a valid UUID due to foreign key
             status: 'published',
-            created_at: serverTimestamp(),
+            views: 0
         };
 
-        // Optional fields — only include if provided
-        if (platform) {
-            insertPayload.platform = platform;
-        }
-        if (source_url) {
-            insertPayload.source_url = source_url;
-        }
+        // Note: The schema for news has 'status' and 'platform' logic differences, 
+        // we'll adapt to 'source' and 'category'.
+
         if (image_url) {
             insertPayload.image_url = image_url;
         } else {
@@ -71,12 +60,18 @@ export async function POST(request: NextRequest) {
 
         console.log('[publish-news] Inserting article with payload:', insertPayload);
 
-        const docRef = await addDoc(collection(db, 'news_articles'), insertPayload);
+        const { data: docRef, error: insertError } = await supabase
+            .from("news")
+            .insert(insertPayload)
+            .select("id")
+            .single();
 
-        console.log('[publish-news] Article inserted successfully:', docRef.id);
+        if (insertError) throw insertError;
+
+        console.log('[publish-news] Article inserted successfully:', docRef?.id);
 
         return NextResponse.json(
-            { success: true, data: { id: docRef.id, ...insertPayload } },
+            { success: true, data: { id: docRef?.id, ...insertPayload } },
             { status: 201 }
         );
     } catch (error) {

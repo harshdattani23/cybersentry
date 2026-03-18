@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,12 +31,13 @@ export default function ContactPage() {
                 throw new Error("All fields are required.");
             }
 
-            await addDoc(collection(db, "contact_messages"), {
+            const { error: insertError } = await supabase.from("contact").insert({
                 name: formData.name,
                 email: formData.email,
                 message: formData.message,
-                created_at: serverTimestamp(),
             });
+
+            if (insertError) throw insertError;
 
             setSuccess(true);
             setFormData({ name: "", email: "", message: "" });

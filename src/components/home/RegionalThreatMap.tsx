@@ -37,7 +37,7 @@ const LOCATIONS: ThreatLocation[] = [
         severity: "high",
         colorHex: "#EA580C", // orange-600
         align: "right",
-    
+
     },
     {
         id: "mumbai",
@@ -107,9 +107,11 @@ export function RegionalThreatMap() {
                 <div className="relative w-full max-w-[500px]">
 
                     {/* BASE MAP SOURCE: Static Image */}
-                    <img
+                    <Image
                         src="/India_Map.png"
                         alt="Map of India"
+                        width={500}
+                        height={550}
                         className="w-full h-auto object-contain opacity-90"
                     />
 

@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, getDocs, query, where, limit, serverTimestamp } from 'firebase/firestore';
+import { createClient } from "@supabase/supabase-js";
 
-// Server-side Firebase client
-const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
-};
-
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Initialize a Supabase client using anon key (since service key isn't guaranteed here)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request: NextRequest) {
     try {
@@ -75,35 +66,25 @@ export async function POST(request: NextRequest) {
             device_type = 'desktop';
         }
 
-        // 4. Prevent duplicate views — query Firestore for existing view
+        // Since we migrated to Supabase and don't have an article_views table 
+        // in the current schema snapshot, we will just fetch the current view 
+        // count and increment it. (In production, an RPC is better to prevent race conditions).
         try {
-            const q = query(
-                collection(db, 'article_views'),
-                where('article_id', '==', article_id),
-                where('ip_address', '==', ip_address),
-                limit(1)
-            );
+            const { data: article } = await supabase
+                .from('news')
+                .select('views')
+                .eq('id', article_id)
+                .single();
 
-            const existingSnapshot = await getDocs(q);
-
-            if (!existingSnapshot.empty) {
-                return NextResponse.json({ success: true, skipped: true });
+            if (article) {
+                await supabase
+                    .from('news')
+                    .update({ views: (article.views || 0) + 1 })
+                    .eq('id', article_id);
             }
-        } catch (checkError) {
-            console.error('Firestore check error:', checkError);
-            // Continue to insert even if check fails
+        } catch (updateErr) {
+            console.error('Supabase update views error:', updateErr);
         }
-
-        // 5. Insert into Firestore collection article_views
-        await addDoc(collection(db, 'article_views'), {
-            article_id,
-            ip_address,
-            country,
-            region,
-            city,
-            device_type,
-            created_at: serverTimestamp(),
-        });
 
         return NextResponse.json({ success: true });
     } catch (error) {

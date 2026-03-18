@@ -1,5 +1,4 @@
-import { doc, getDoc, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -17,16 +16,17 @@ export async function generateMetadata({
     const { id } = await params;
 
     try {
-        const docRef = doc(db, "news_articles", id);
-        const docSnap = await getDoc(docRef);
+        const { data: article, error } = await supabase
+            .from("news")
+            .select("title, summary, image_url")
+            .eq("id", id)
+            .single();
 
-        if (!docSnap.exists()) {
+        if (error || !article) {
             return {
                 title: 'Article Not Found - CyberSentry',
             };
         }
-
-        const article = docSnap.data();
 
         return {
             title: `${article.title} - CyberSentry News`,
@@ -68,53 +68,40 @@ export default async function Page({
         );
     }
 
+    let newsArticle: NewsArticle | null = null;
+    let hasError = false;
+
     try {
-        const docRef = doc(db, "news_articles", id);
-        const docSnap = await getDoc(docRef);
+        const { data: docData, error: dbError } = await supabase
+            .from("news")
+            .select("*")
+            .eq("id", id)
+            .single();
 
-        if (!docSnap.exists()) {
-            console.log("ARTICLE NOT FOUND (Document does not exist)");
-            return (
-                <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center text-center min-h-[60vh]">
-                    <h1 className="text-3xl font-bold text-slate-900 mb-4">Article Not Found</h1>
-                    <p className="text-slate-600 mb-8 max-w-md">
-                        The news article you are looking for does not exist or has been removed.
-                    </p>
-                    <Link href="/">
-                        <Button>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
-                        </Button>
-                    </Link>
-                </div>
-            );
+        if (dbError || !docData) {
+            hasError = true;
+        } else {
+            newsArticle = {
+                id: docData.id,
+                title: docData.title || "",
+                category: docData.category || "",
+                summary: docData.summary || "",
+                content: docData.content || "",
+                author_name: docData.author_name || "",
+                source_name: docData.source_name || "",
+                source_url: docData.source_url || null,
+                created_at: docData.created_at || "",
+                image_url: docData.image_url || null,
+                platform: docData.platform || null,
+                status: docData.status || "",
+            };
         }
-
-        const docData = docSnap.data();
-        const newsArticle: NewsArticle = {
-            id: docSnap.id,
-            title: docData.title || "",
-            category: docData.category || "",
-            summary: docData.summary || "",
-            content: docData.content || "",
-            author_name: docData.author_name || "",
-            source_name: docData.source_name || "",
-            source_url: docData.source_url || null,
-            created_at: docData.created_at instanceof Timestamp
-                ? docData.created_at.toDate().toISOString()
-                : docData.created_at || "",
-            image_url: docData.image_url || null,
-            platform: docData.platform || null,
-            status: docData.status || "",
-        };
-
-        return (
-            <>
-                <LogView articleId={newsArticle.id} />
-                <NewsArticleClient article={newsArticle} />
-            </>
-        );
     } catch (error) {
         console.error("Error fetching article:", error);
+        hasError = true;
+    }
+
+    if (hasError || !newsArticle) {
         return (
             <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center text-center min-h-[60vh]">
                 <h1 className="text-3xl font-bold text-slate-900 mb-4">Article Not Found</h1>
@@ -129,4 +116,11 @@ export default async function Page({
             </div>
         );
     }
+
+    return (
+        <>
+            <LogView articleId={newsArticle.id} />
+            <NewsArticleClient article={newsArticle} />
+        </>
+    );
 }

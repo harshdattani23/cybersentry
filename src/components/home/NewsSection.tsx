@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Calendar, Newspaper, Loader2 } from "lucide-react";
-import { collection, getDocs, query, where, orderBy, limit, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 interface NewsArticle {
     id: string;
@@ -28,27 +28,18 @@ export function NewsSection() {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const q = query(
-                    collection(db, "news_articles"),
-                    where("status", "==", "published"),
-                    orderBy("created_at", "desc"),
-                    limit(6)
-                );
+                const { data, error } = await supabase
+                    .from("news")
+                    .select("*")
+                    .eq("status", "published")
+                    .order("created_at", { ascending: false })
+                    .limit(6);
 
-                const snapshot = await getDocs(q);
+                if (error) throw error;
 
-                const data = snapshot.docs.map(doc => {
-                    const docData = doc.data();
-                    return {
-                        id: doc.id,
-                        ...docData,
-                        created_at: docData.created_at instanceof Timestamp
-                            ? docData.created_at.toDate().toISOString()
-                            : docData.created_at || "",
-                    } as NewsArticle;
-                });
-
-                setArticles(data);
+                if (data) {
+                    setArticles(data as NewsArticle[]);
+                }
             } catch (error) {
                 console.error("Error fetching news:", error);
             } finally {
@@ -108,10 +99,11 @@ export function NewsSection() {
                                             <div className="h-32 w-full bg-slate-100 relative border-b border-slate-100">
                                                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                                                     {article.image_url ? (
-                                                        <img
+                                                        <Image
                                                             src={article.image_url}
                                                             alt={article.title}
-                                                            className="h-full w-full object-cover"
+                                                            className="object-cover"
+                                                            fill
                                                         />
                                                     ) : (
                                                         <div className="text-slate-300">

@@ -8,12 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, UploadCloud, ShieldCheck, ArrowRight, Lock, Loader2, Info } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 export default function ReportFraudPage() {
-    const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [caseId, setCaseId] = useState("");
@@ -66,7 +63,7 @@ export default function ReportFraudPage() {
         const finalUrl = formData.platform === 'website' ? formData.websiteUrl : formData.upi;
 
         try {
-            await addDoc(collection(db, "fraud_reports"), {
+            const { error: insertError } = await supabase.from("cases").insert({
                 title: formData.title,
                 category: formData.category,
                 platform: finalPlatform,
@@ -74,9 +71,10 @@ export default function ReportFraudPage() {
                 phone: formData.phone,
                 url: finalUrl,
                 status: 'under_review',
-                is_public: true,
-                created_at: serverTimestamp(),
+                is_public: true, // Note: For a real app, maybe review first
             });
+
+            if (insertError) throw insertError;
 
             // Generate Mock ID for display
             const randomId = Math.floor(1000 + Math.random() * 9000);
@@ -98,9 +96,9 @@ export default function ReportFraudPage() {
             });
             setBgPlatform("");
 
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error submitting report:", error);
-            setErrorMsg(error.message || "Failed to submit report. Please try again.");
+            setErrorMsg(error instanceof Error ? error.message : "Failed to submit report. Please try again.");
         } finally {
             setIsSubmitting(false);
         }

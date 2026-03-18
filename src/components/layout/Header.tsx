@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export function Header() {
+  const { user, userData, loading } = useAuth();
+
   return (
     <header className="border-b bg-white">
       {/* Top Bar for Accessibility and Language */}
@@ -39,10 +45,41 @@ export function Header() {
           </div>
         </div>
 
-        {/* Right side - Emergency or Helplines (optional in header, but user put it in footer) */}
-        <div className="hidden md:block text-right">
-          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Cyber Fraud Helpline</p>
-          <p className="text-xl font-bold text-blue-900">1930</p>
+        {/* Right side - User Auth and Helplines */}
+        <div className="flex items-center space-x-6">
+          <div className="hidden md:block text-right">
+            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Cyber Fraud Helpline</p>
+            <p className="text-xl font-bold text-blue-900">1930</p>
+          </div>
+
+          <div className="flex items-center border-l pl-6 border-slate-200">
+            {!loading && (
+              user ? (
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-slate-600 font-medium hidden md:block">{user.email}</span>
+                  {userData?.role === 'admin' && (
+                    <Link href="/harsh">
+                      <Button variant="ghost" size="sm" className="text-blue-700 hover:text-blue-900 border border-blue-200 bg-blue-50 hover:bg-blue-100">
+                        Admin Portal
+                      </Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>
+                    Log Out
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Link href="/login">
+                    <Button variant="ghost" size="sm">Log In</Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button size="sm" className="bg-blue-900 text-white hover:bg-blue-800">Register</Button>
+                  </Link>
+                </div>
+              )
+            )}
+          </div>
         </div>
       </div>
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { Calendar, User, Globe, ArrowLeft } from "lucide-react";
 
 export interface NewsArticle {
@@ -89,10 +90,11 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
 
                     {article.image_url && (
                         <div className="rounded-xl overflow-hidden shadow-lg mb-8 bg-slate-100 border border-slate-200 relative aspect-video">
-                            <img
+                            <Image
                                 src={article.image_url}
                                 alt={article.title}
-                                className="w-full h-full object-cover"
+                                className="object-cover"
+                                fill
                             />
                         </div>
                     )}

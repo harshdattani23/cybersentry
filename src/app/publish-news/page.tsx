@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import {
     Card,
     CardHeader,
@@ -16,8 +18,17 @@ import { Loader2 } from "lucide-react";
 
 export default function PublishNewsPage() {
     const [submitted, setSubmitted] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const { user, userData, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push("/login");
+        }
+    }, [user, loading, router]);
 
     const [formData, setFormData] = useState({
         title: "",
@@ -48,7 +59,7 @@ export default function PublishNewsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        setSubmitting(true);
         setError(null);
 
         // 1. Log the initial form data
@@ -56,7 +67,7 @@ export default function PublishNewsPage() {
         console.log("Current Form Data:", formData);
 
         try {
-            let imageUrl: string | null = null;
+            const imageUrl: string | null = null;
 
             // Note: Image file upload is not currently supported (Supabase Storage removed).
             // If an image URL is needed, it can be provided via other means in the future.
@@ -74,6 +85,7 @@ export default function PublishNewsPage() {
                 source_name: formData.sourceName,
                 source_url: formData.sourceUrl || null,
                 author_name: formData.authorName,
+                author_id: user?.id,
                 image_url: imageUrl,
             };
 
@@ -120,14 +132,49 @@ export default function PublishNewsPage() {
             });
             setImageFile(null);
 
-        } catch (err: any) {
+        } catch (err) {
             console.error('CRITICAL Error submitting article:', err);
-            setError(err.message || "An error occurred while submitting the article.");
+            setError(err instanceof Error ? err.message : "An error occurred while submitting the article.");
         } finally {
-            setLoading(false);
+            setSubmitting(false);
             console.log("Form submission process finished.");
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center py-24">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-900" />
+                <span className="ml-3 text-slate-600 font-medium">Checking authentication...</span>
+            </div>
+        );
+    }
+
+    if (userData && !userData?.approvedToPublish && userData?.role !== 'admin') {
+        return (
+            <div className="container mx-auto py-12 px-4 max-w-3xl">
+                <Card className="border-amber-200 bg-amber-50 shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="text-amber-800 text-2xl">Pending Admin Approval</CardTitle>
+                        <CardDescription className="text-amber-700 text-lg">
+                            Your account is currently under review by an administrator.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-amber-700 mb-6">
+                            For security purposes, all news publishers must be manually verified. You will be able to publish articles once an administrator approves your account.
+                        </p>
+                        <Button
+                            onClick={() => router.push("/")}
+                            className="bg-amber-700 hover:bg-amber-800 text-white"
+                        >
+                            Return Home
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     if (submitted) {
         return (
@@ -322,9 +369,9 @@ export default function PublishNewsPage() {
                             <Button
                                 type="submit"
                                 className="w-full md:w-auto bg-blue-900 hover:bg-blue-800 text-white px-8"
-                                disabled={loading}
+                                disabled={submitting}
                             >
-                                {loading ? (
+                                {submitting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Submitting...

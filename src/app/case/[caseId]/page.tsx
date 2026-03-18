@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
     ArrowLeft,
@@ -11,12 +10,9 @@ import {
     AlertTriangle,
     Eye,
     CheckCircle2,
-    Circle,
     Clock,
     FileText,
-    Share2,
-    Building2,
-    Lock
+    Building2
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -236,7 +232,7 @@ export default async function CaseDetailsPage({ params }: { params: Promise<{ ca
                                 <div>
                                     <h3 className="text-sm font-medium text-slate-500 mb-2">Citizen Summary</h3>
                                     <p className="text-sm text-slate-700 leading-relaxed bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-                                        "{caseData.summary}"
+                                        &quot;{caseData.summary}&quot;
                                     </p>
                                 </div>
 
@@ -301,7 +297,7 @@ export default async function CaseDetailsPage({ params }: { params: Promise<{ ca
                             </h2>
 
                             <div className="relative border-l-2 border-slate-200 ml-3 space-y-8 pb-4">
-                                {caseData.timeline.map((event, index) => (
+                                {caseData.timeline.map((event) => (
                                     <div key={event.id} className="relative pl-8">
                                         {/* Timeline Dot */}
                                         <div

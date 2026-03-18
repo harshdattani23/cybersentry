@@ -1,4 +1,4 @@
-import { Newspaper, Users, Shield, CheckCircle } from "lucide-react";
+import { Users, Shield, CheckCircle } from "lucide-react";
 
 export function InfoSections() {
     return (
