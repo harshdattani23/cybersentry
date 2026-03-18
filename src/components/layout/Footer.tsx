@@ -2,56 +2,49 @@ import Link from "next/link";
 
 export function Footer() {
     return (
-        <footer className="bg-slate-900 text-slate-300 py-12 border-t-4 border-blue-900">
-            <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-
-                {/* Column 1: Identity */}
+        <footer className="bg-brand-primary text-white w-full py-16 px-8 flex flex-col items-center gap-6 mt-auto font-body text-xs uppercase tracking-widest border-t-4 border-brand-accent">
+            <div className="w-full max-w-7xl grid md:grid-cols-4 gap-12 mb-12">
                 <div className="col-span-1 md:col-span-2">
-                    <h2 className="text-xl font-bold text-white mb-4">CyberSentry India</h2>
-                    <p className="text-sm leading-relaxed mb-6 max-w-md">
-                        This is the official portal for cyber fraud awareness and prevention in India.
-                        Dedicated to empowering citizens with knowledge and tools to stay safe in the digital world.
+                    <div className="text-2xl font-extrabold text-white mb-6 font-headline tracking-tighter">CYBER SENTRY</div>
+                    <p className="text-slate-400 normal-case tracking-normal max-w-md leading-relaxed mb-8">
+                        The official national gateway for cybersecurity awareness, incident reporting, and threat analysis. Operated under the mandate of the Ministry of Electronics and IT, Govt of India.
                     </p>
-                    <p className="text-xs text-slate-500">
-                        © {new Date().getFullYear()} CyberSentry India. All rights reserved.
-                        Content owned by the portal administration.
-                    </p>
+                    <Link href="/report">
+                        <button className="bg-brand-accent text-brand-primary font-black px-8 py-4 rounded-xl flex items-center gap-3 transition-opacity duration-300 hover:opacity-90">
+                            REPORT ANONYMOUSLY
+                            <span className="material-symbols-outlined text-sm">visibility_off</span>
+                        </button>
+                    </Link>
                 </div>
-
-                {/* Column 2: Quick Links */}
-                <div>
-                    <h3 className="text-white font-semibold mb-4 uppercase tracking-wider text-sm">Quick Links</h3>
-                    <ul className="space-y-2 text-sm">
-                        <li><Link href="#" className="hover:text-white underline decoration-slate-600 hover:decoration-white underline-offset-4">Privacy Policy</Link></li>
-                        <li><Link href="#" className="hover:text-white underline decoration-slate-600 hover:decoration-white underline-offset-4">Terms of Use</Link></li>
-                        <li><Link href="#" className="hover:text-white underline decoration-slate-600 hover:decoration-white underline-offset-4">Accessibility Statement</Link></li>
-                        <li><Link href="#" className="hover:text-white underline decoration-slate-600 hover:decoration-white underline-offset-4">Sitemap</Link></li>
-                    </ul>
+                <div className="flex flex-col gap-6">
+                    <span className="text-white font-bold text-sm">Legal &amp; Audit</span>
+                    <div className="flex flex-col gap-3">
+                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Privacy Policy</Link>
+                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Terms of Service</Link>
+                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Security Audit</Link>
+                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">RTI Disclosures</Link>
+                    </div>
                 </div>
-
-                {/* Column 3: Contact & Helplines */}
-                <div>
-                    <h3 className="text-white font-semibold mb-4 uppercase tracking-wider text-sm">Emergency Helplines</h3>
-                    <div className="space-y-4">
-                        <div>
-                            <p className="text-xs text-slate-400">National Cyber Crime Helpline</p>
-                            <p className="text-2xl font-bold text-yellow-400">1930</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-slate-400">Official Reporting Portal</p>
-                            <Link href="https://cybercrime.gov.in" target="_blank" className="text-lg font-semibold text-white hover:underline">
-                                cybercrime.gov.in
-                            </Link>
+                <div className="flex flex-col gap-6">
+                    <span className="text-white font-bold text-sm">Assistance</span>
+                    <div className="flex flex-col gap-3">
+                        <Link href="/contact" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Contact Support</Link>
+                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Citizen FAQ</Link>
+                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Regional Offices</Link>
+                        <div className="text-slate-400 mt-2">
+                            <p className="text-[10px] uppercase text-brand-accent">National Helpine</p>
+                            <p className="text-xl font-bold font-headline text-white mt-1">1930</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            {/* Bottom Bar */}
-            <div className="container mx-auto px-4 mt-12 pt-8 border-t border-slate-800 text-center">
-                <p className="text-xs text-slate-500">
-                    An accessibility-first initiative for public safety.
-                </p>
+            <div className="w-full max-w-7xl pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="text-slate-500 font-medium normal-case tracking-normal">© {new Date().getFullYear()} Cyber Sentry. Ministry of Electronics and IT, Government of India.</div>
+                <div className="flex gap-8">
+                    <Link href="#" className="text-slate-400 hover:text-white transition-colors"><span className="material-symbols-outlined">share</span></Link>
+                    <Link href="#" className="text-slate-400 hover:text-white transition-colors"><span className="material-symbols-outlined">rss_feed</span></Link>
+                    <Link href="#" className="text-slate-400 hover:text-white transition-colors"><span className="material-symbols-outlined">mail</span></Link>
+                </div>
             </div>
         </footer>
     );
