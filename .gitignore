@@ -42,3 +42,4 @@ next-env.d.ts
 users.json
 firebase_config.json
 create-admin.mjs
+gcp-key.json
