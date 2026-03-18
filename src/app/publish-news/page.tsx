@@ -3,6 +3,11 @@
 import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import dynamic from 'next/dynamic';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
+
 import {
     Card,
     CardHeader,
@@ -20,6 +25,22 @@ export default function PublishNewsPage() {
     const [submitted, setSubmitted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const quillModules = {
+        toolbar: [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'direction': 'rtl' }],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'align': [] }],
+            ['link', 'image', 'video'],
+            ['clean']
+        ],
+    };
 
     const { user, userData, loading } = useAuth();
     const router = useRouter();
@@ -48,6 +69,13 @@ export default function PublishNewsPage() {
         setFormData((prev) => ({
             ...prev,
             [id]: value,
+        }));
+    };
+
+    const handleContentChange = (content: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            content,
         }));
     };
 
@@ -292,14 +320,16 @@ export default function PublishNewsPage() {
                         {/* Full Article Content */}
                         <div className="space-y-2">
                             <Label htmlFor="content">Full Article Content <span className="text-red-500">*</span></Label>
-                            <Textarea
-                                id="content"
-                                required
-                                placeholder="Write the full news content here..."
-                                className="min-h-[200px]"
-                                value={formData.content}
-                                onChange={handleInputChange}
-                            />
+                            <div className="bg-white rounded-md border text-slate-900 border-slate-200">
+                                <ReactQuill
+                                    theme="snow"
+                                    value={formData.content}
+                                    onChange={handleContentChange}
+                                    modules={quillModules}
+                                    placeholder="Write the full news content here..."
+                                    className="min-h-[300px]"
+                                />
+                            </div>
                         </div>
 
                         {/* Source Info */}

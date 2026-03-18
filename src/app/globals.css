@@ -44,6 +44,18 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-surface: #f9f9ff;
+  --color-on-background: #111c2d;
+  --color-inverse-surface: #263143;
+  --color-brand-primary: #0D1B2A;
+  --color-brand-secondary: #515f74;
+  --color-brand-accent: #6ffbbe;
+  --color-vibrant-cyan: #00f5ff;
+  --color-surface-container: #e7eeff;
+  --color-surface-container-low: #f0f3ff;
+  --color-surface-container-high: #dee8ff;
+  --color-outline-variant: #c4c6cc;
 }
 
 :root {
@@ -121,5 +133,26 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .dark-glass {
+      background: rgba(13, 27, 42, 0.6);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .bastion-gradient {
+      background: linear-gradient(135deg, #0D1B2A 0%, #1B263B 50%, #0D1B2A 100%);
+  }
+  .grid-pattern {
+      background-image: radial-gradient(rgba(111, 251, 190, 0.1) 1px, transparent 0);
+      background-size: 30px 30px;
   }
 }
