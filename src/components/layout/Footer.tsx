@@ -3,7 +3,7 @@ import Link from "next/link";
 export function Footer() {
     return (
         <footer className="bg-brand-primary text-white w-full py-16 px-8 flex flex-col items-center gap-6 mt-auto font-body text-xs uppercase tracking-widest border-t-4 border-brand-accent">
-            <div className="w-full max-w-7xl grid md:grid-cols-4 gap-12 mb-12">
+            <div className="w-full max-w-7xl grid md:grid-cols-3 gap-12 mb-12">
                 <div className="col-span-1 md:col-span-2">
                     <div className="text-2xl font-extrabold text-white mb-6 font-headline tracking-tighter">CYBER SENTRY</div>
                     <p className="text-slate-400 normal-case tracking-normal max-w-md leading-relaxed mb-8">
@@ -15,15 +15,6 @@ export function Footer() {
                             <span className="material-symbols-outlined text-sm">visibility_off</span>
                         </button>
                     </Link>
-                </div>
-                <div className="flex flex-col gap-6">
-                    <span className="text-white font-bold text-sm">Legal &amp; Audit</span>
-                    <div className="flex flex-col gap-3">
-                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Privacy Policy</Link>
-                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Terms of Service</Link>
-                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">Security Audit</Link>
-                        <Link href="#" className="text-slate-400 hover:text-brand-accent transition-colors duration-300">RTI Disclosures</Link>
-                    </div>
                 </div>
                 <div className="flex flex-col gap-6">
                     <span className="text-white font-bold text-sm">Assistance</span>
