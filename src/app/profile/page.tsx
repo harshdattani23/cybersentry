@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, UserCircle } from "lucide-react";
+import { Loader2, UserCircle, Upload } from "lucide-react";
 
 export default function ProfilePage() {
     const { user, userData, loading } = useAuth();
@@ -31,6 +31,17 @@ export default function ProfilePage() {
         bio: "",
         photo_url: "",
     });
+
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setAvatarFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
 
     useEffect(() => {
         if (!loading && !user) {
@@ -71,25 +82,68 @@ export default function ProfilePage() {
         }
 
         try {
-            const { error: updateError } = await supabase
-                .from("users")
-                .update({
-                    name: formData.name,
-                    designation: formData.designation,
-                    bio: formData.bio,
-                    photo_url: formData.photo_url,
-                })
-                .eq("id", user.id);
+            let finalPhotoUrl = formData.photo_url;
 
-            if (updateError) {
-                throw new Error("Failed to update profile: " + updateError.message);
+            if (avatarFile) {
+                const fileExt = avatarFile.name.split('.').pop();
+                const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from("avatars")
+                    .upload(filePath, avatarFile);
+
+                if (uploadError) {
+                    throw new Error("Failed to upload avatar: " + uploadError.message + " (Check if 'avatars' bucket exists in Supabase Storage and is set to 'Public')");
+                }
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from("avatars")
+                    .getPublicUrl(filePath);
+
+                finalPhotoUrl = publicUrl;
+            }
+
+            // Extract session token from LocalStorage manually to avoid session manager deadlocks
+            let token = "";
+            if (typeof window !== 'undefined') {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.includes('-auth-token')) {
+                        try {
+                            const parsed = JSON.parse(localStorage.getItem(key) || '{}');
+                            token = parsed.access_token || "";
+                            break;
+                        } catch(e) {}
+                    }
+                }
+            }
+
+            if (!token) {
+                throw new Error("No active session token found. Please log in again.");
+            }
+
+            // Prepare exactly what goes to the database
+            const profilePayload = {
+                id: user.id,
+                email: user.email,
+                name: formData.name,
+                designation: formData.designation,
+                bio: formData.bio,
+                photo_url: finalPhotoUrl,
+            };
+
+            // 5. Blast data directly through a NodeJS Server Action
+            const { updateProfileAction } = await import("./actions");
+            const result = await updateProfileAction(profilePayload, token);
+
+            if (!result.success) {
+                throw new Error(result.error || "Failed to save profile via server action.");
             }
 
             setSuccessMessage("Profile saved successfully!");
 
-            // Normally, mutating the AuthContext isn't immediately reactive without a full refresh 
-            // since it depends on the remote DB state. However, on next load or Auth refresh it picks up.
-            // For forced visual updates, reload the page after a brief delay.
+            // Reload after a delay to pick up new userData
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -142,26 +196,43 @@ export default function ProfilePage() {
                     <form onSubmit={handleSaveProfile} className="space-y-6">
                         {/* Avatar Display Logic */}
                         <div className="flex items-center gap-4 mb-2">
-                            {formData.photo_url ? (
-                                <img 
-                                    src={formData.photo_url} 
-                                    alt="Avatar" 
-                                    className="w-16 h-16 rounded-full object-cover border-2 border-surface-container"
-                                />
-                            ) : (
-                                <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-slate-400">
-                                    <UserCircle className="w-8 h-8" />
+                            <div className="relative group cursor-pointer h-16 w-16 shrink-0">
+                                {previewUrl || formData.photo_url ? (
+                                    <img 
+                                        src={previewUrl || formData.photo_url} 
+                                        alt="Avatar" 
+                                        className="w-16 h-16 rounded-full object-cover border-2 border-surface-container transition-opacity group-hover:opacity-75"
+                                    />
+                                ) : (
+                                    <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-slate-400 transition-opacity group-hover:opacity-75">
+                                        <UserCircle className="w-8 h-8" />
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-black/40 pointer-events-none">
+                                    <Upload className="w-5 h-5 text-white" />
                                 </div>
-                            )}
-                            <div className="space-y-1">
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={handleFileChange}
+                                    title="Upload Profile Picture"
+                                />
+                            </div>
+                            <div className="space-y-1 w-full max-w-[300px]">
                                 <Label htmlFor="photo_url" className="text-sm font-bold text-brand-primary">Avatar URL 🔗</Label>
                                 <Input
                                     id="photo_url"
-                                    placeholder="https://example.com/photo.jpg"
+                                    placeholder="Or enter image URL"
                                     value={formData.photo_url}
-                                    onChange={handleInputChange}
-                                    className="w-full md:w-[300px] text-sm"
+                                    onChange={(e) => {
+                                        setAvatarFile(null);
+                                        setPreviewUrl(null);
+                                        handleInputChange(e);
+                                    }}
+                                    className="w-full text-sm"
                                 />
+                                <p className="text-xs text-slate-500">Click avatar to upload, or paste a URL.</p>
                             </div>
                         </div>
 

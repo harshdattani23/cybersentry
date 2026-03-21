@@ -35,8 +35,12 @@ export function Header() {
 
         {/* Right Actions & Auth */}
         <div className="flex items-center gap-4 md:gap-6">
-          {!loading && (
-            user ? (
+          {loading ? (
+            <div className="hidden xl:flex items-center gap-4 animate-pulse">
+              <div className="h-8 w-16 bg-slate-200 rounded-md"></div>
+              <div className="h-8 w-16 bg-slate-200 rounded-md"></div>
+            </div>
+          ) : user ? (
               <div className="hidden xl:flex items-center gap-3">
                 {userData?.role === 'admin' && (
                   <Link href="/harsh" className="py-2 px-4 text-xs font-bold rounded-lg border border-brand-accent bg-brand-accent/10 text-brand-primary hover:bg-brand-accent/20 transition-colors whitespace-nowrap">
@@ -62,8 +66,7 @@ export function Header() {
                   Register
                 </Link>
               </div>
-            )
-          )}
+            )}
 
 
           {/* Mobile Menu Toggle */}
@@ -92,8 +95,11 @@ export function Header() {
           </Link>
 
           <div className="pt-6 pb-2 flex flex-col gap-4">
-            {!loading && (
-              user ? (
+            {loading ? (
+              <div className="flex justify-center p-4">
+                <div className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : user ? (
                 <>
                   <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-3 text-sm font-bold rounded-lg border border-brand-secondary/30 bg-surface-container-low text-brand-primary">
                     Edit Profile
@@ -119,8 +125,7 @@ export function Header() {
                     Register
                   </Link>
                 </div>
-              )
-            )}
+              )}
 
           </div>
         </div>

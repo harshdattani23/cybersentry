@@ -1,8 +1,17 @@
 import { ShieldAlert } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
+import { supabase } from "@/lib/supabase";
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const { data: latestNews, error } = await supabase
+      .from('news')
+      .select('*')
+      .order('id', { ascending: false })
+      .limit(3);
+
   return (
     <div className="bg-surface font-body text-on-background">
       <main>
@@ -144,70 +153,111 @@ export default function Home() {
           <div className="container mx-auto px-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-8 text-center md:text-left">
               <div>
-                <h2 className="font-headline text-4xl font-extrabold tracking-tight text-brand-primary mb-2">Emerging Fraud &amp; Advisories</h2>
-                <p className="text-brand-secondary text-lg">Official security alerts and safety protocols issued by national coordination centers.</p>
+                <h2 className="font-headline text-4xl font-extrabold tracking-tight text-brand-primary mb-2">Latest News Articles</h2>
+                <p className="text-brand-secondary text-lg">Stay updated with the latest cyber fraud news and advisories submitted by our publishers.</p>
               </div>
               <Link href="/cases">
                   <button className="flex items-center gap-2 text-brand-primary font-bold border-b-2 border-brand-primary pb-1 hover:text-brand-accent transition-colors shrink-0">
-                    Browse All Advisories <span className="material-symbols-outlined">arrow_forward</span>
+                    Browse All News <span className="material-symbols-outlined">arrow_forward</span>
                   </button>
               </Link>
             </div>
+            
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group">
-                <div className="flex justify-between items-start mb-6">
-                  <span className="px-3 py-1 bg-red-100 text-red-700 text-[10px] font-black uppercase tracking-widest rounded-full">Critical</span>
-                  <span className="text-xs text-brand-secondary">Latest</span>
-                </div>
-                <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors">Digital Arrest Scams Surge Targeting Senior Citizens</h4>
-                <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">Scammers impersonating CBI or Customs officials are making video calls declaring fake "digital arrests" to extort money. Do NOT comply and report immediately.</p>
-                <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
-                  <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">verified</span>
-                    Ref: I4C-902
-                  </span>
-                  <Link href="/cases" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
-                    Read More
-                    <span className="material-symbols-outlined text-sm">open_in_new</span>
-                  </Link>
-                </div>
-              </div>
-              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group">
-                <div className="flex justify-between items-start mb-6">
-                  <span className="px-3 py-1 bg-brand-accent/20 text-[#008f5d] text-[10px] font-black uppercase tracking-widest rounded-full">Secure Guide</span>
-                  <span className="text-xs text-brand-secondary">Verified</span>
-                </div>
-                <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors">Securing Financial Transactions: Mandatory Steps</h4>
-                <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">Ensure you never share OTPs, PINs, or install screen-sharing apps like AnyDesk or TeamViewer on instructions from unverified callers.</p>
-                <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
-                  <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">verified</span>
-                    Ref: PR-441
-                  </span>
-                  <Link href="/cases" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
-                    Read More
-                    <span className="material-symbols-outlined text-sm">open_in_new</span>
-                  </Link>
-                </div>
-              </div>
-              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group">
-                <div className="flex justify-between items-start mb-6">
-                  <span className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">Warning</span>
-                  <span className="text-xs text-brand-secondary">Urgent</span>
-                </div>
-                <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors">APK Fraud: Malicious Apps Bypassing Store Checks</h4>
-                <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">Beware of SMS messages containing links to download APK files for KYC updates or bill payments. These often contain malware designed to intercept bank SMS.</p>
-                <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
-                  <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">verified</span>
-                    Ref: AL-112
-                  </span>
-                  <Link href="/cases" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
-                    Read More
-                    <span className="material-symbols-outlined text-sm">open_in_new</span>
-                  </Link>
-                </div>
-              </div>
+              {latestNews && latestNews.length > 0 ? (
+                latestNews.map((news) => {
+                  let badgeColors = "bg-brand-accent/20 text-[#008f5d]";
+                  if (news.category?.toLowerCase().includes("fraud") || news.category?.toLowerCase().includes("scam") || news.category?.toLowerCase().includes("critical")) {
+                    badgeColors = "bg-red-100 text-red-700";
+                  } else if (news.category?.toLowerCase().includes("warning") || news.category?.toLowerCase().includes("alert")) {
+                    badgeColors = "bg-amber-100 text-amber-700";
+                  }
+
+                  return (
+                    <div key={news.id} className="bg-white p-8 rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group">
+                      <div className="flex justify-between items-start mb-6">
+                        <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${badgeColors}`}>
+                          {news.category || "News"}
+                        </span>
+                        <span className="text-xs text-brand-secondary">Latest</span>
+                      </div>
+                      <Link href={`/news/${news.id}`} target="_blank">
+                        <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors uppercase cursor-pointer">
+                          {news.title}
+                        </h4>
+                      </Link>
+                      <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">{news.summary}</p>
+                      <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
+                        <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">verified</span>
+                          Ref: {news.source || 'CyberSentry News'}
+                        </span>
+                        <Link href={`/news/${news.id}`} target="_blank" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
+                          Read More
+                          <span className="material-symbols-outlined text-sm">open_in_new</span>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <>
+                  <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group">
+                    <div className="flex justify-between items-start mb-6">
+                      <span className="px-3 py-1 bg-red-100 text-red-700 text-[10px] font-black uppercase tracking-widest rounded-full">Critical</span>
+                      <span className="text-xs text-brand-secondary">Latest</span>
+                    </div>
+                    <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors">Digital Arrest Scams Surge Targeting Senior Citizens</h4>
+                    <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">Scammers impersonating CBI or Customs officials are making video calls declaring fake "digital arrests" to extort money. Do NOT comply and report immediately.</p>
+                    <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
+                      <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">verified</span>
+                        Ref: I4C-902
+                      </span>
+                      <Link href="/cases" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
+                        Read More
+                        <span className="material-symbols-outlined text-sm">open_in_new</span>
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group">
+                    <div className="flex justify-between items-start mb-6">
+                      <span className="px-3 py-1 bg-brand-accent/20 text-[#008f5d] text-[10px] font-black uppercase tracking-widest rounded-full">Secure Guide</span>
+                      <span className="text-xs text-brand-secondary">Verified</span>
+                    </div>
+                    <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors">Securing Financial Transactions: Mandatory Steps</h4>
+                    <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">Ensure you never share OTPs, PINs, or install screen-sharing apps like AnyDesk or TeamViewer on instructions from unverified callers.</p>
+                    <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
+                      <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">verified</span>
+                        Ref: PR-441
+                      </span>
+                      <Link href="/cases" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
+                        Read More
+                        <span className="material-symbols-outlined text-sm">open_in_new</span>
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group">
+                    <div className="flex justify-between items-start mb-6">
+                      <span className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">Warning</span>
+                      <span className="text-xs text-brand-secondary">Urgent</span>
+                    </div>
+                    <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors">APK Fraud: Malicious Apps Bypassing Store Checks</h4>
+                    <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">Beware of SMS messages containing links to download APK files for KYC updates or bill payments. These often contain malware designed to intercept bank SMS.</p>
+                    <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
+                      <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">verified</span>
+                        Ref: AL-112
+                      </span>
+                      <Link href="/cases" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
+                        Read More
+                        <span className="material-symbols-outlined text-sm">open_in_new</span>
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>

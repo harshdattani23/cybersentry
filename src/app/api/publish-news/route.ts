@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize a Supabase client using anon key
+// Constants for initialization
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request: NextRequest) {
     try {
+        const authHeader = request.headers.get('Authorization');
+        
+        // Initialize Supabase with the incoming auth header to bypass RLS restrictions securely
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+            global: {
+                headers: authHeader ? { Authorization: authHeader } : {}
+            }
+        });
+
         const body = await request.json();
 
         const {
@@ -16,15 +24,17 @@ export async function POST(request: NextRequest) {
             platform,
             summary,
             content,
-            source_name,
+            source,
             source_url,
-            author_name,
+            author_email,
             author_id,
             image_url,
+            status,
+            views
         } = body;
 
         // Validate required fields (trim to catch whitespace-only strings)
-        const requiredFields = { title, category, summary, content, source_name, author_name };
+        const requiredFields = { title, category, summary, content, source, author_email };
         const missingFields = Object.entries(requiredFields)
             .filter(([, value]) => !value || (typeof value === 'string' && value.trim() === ''))
             .map(([key]) => key);
@@ -36,17 +46,19 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Build insert payload
+        // Build exact insert payload mapping securely
         const insertPayload: Record<string, unknown> = {
             title,
             category,
+            platform: platform || null,
             summary,
             content,
-            source: source_name, // Schema column is called "source" not "source_name"
-            author_email: author_name, // Schema column is "author_email", mapping author_name to it
-            author_id: author_id || null, // Needs to be a valid UUID due to foreign key
-            status: 'published',
-            views: 0
+            source,
+            source_url: source_url || null,
+            author_email,
+            author_id: author_id || null,
+            status: status || 'published',
+            views: views || 0
         };
 
         // Note: The schema for news has 'status' and 'platform' logic differences, 
@@ -74,10 +86,10 @@ export async function POST(request: NextRequest) {
             { success: true, data: { id: docRef?.id, ...insertPayload } },
             { status: 201 }
         );
-    } catch (error) {
+    } catch (error: any) {
         console.error('[publish-news] Unexpected error:', error);
         return NextResponse.json(
-            { success: false, error: error instanceof Error ? error.message : 'Internal Server Error', code: '' },
+            { success: false, error: error?.message || 'Internal Server Error', fullError: error },
             { status: 500 }
         );
     }

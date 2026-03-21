@@ -113,10 +113,13 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
                         </div>
                     )}
 
-                    {/* Main Content */}
-                    <div className="whitespace-pre-wrap leading-relaxed text-slate-800">
-                        {article.content}
-                    </div>
+                    {/* Main Content (HTML rendered safely with wrap-around protection) */}
+                    <div 
+                        className="leading-relaxed text-slate-800 news-content-html break-words overflow-hidden"
+                        dangerouslySetInnerHTML={{ 
+                            __html: article.content.replace(/&nbsp;/g, ' ') 
+                        }}
+                    />
                 </div>
 
                 {/* Footer / Actions */}

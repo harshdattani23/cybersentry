@@ -60,8 +60,13 @@ export default function RegisterPage() {
                 </CardHeader>
                 <CardContent>
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm" role="alert">
                             {error}
+                            {error.toLowerCase().includes("limit") && (
+                                <p className="mt-2 text-xs opacity-80">
+                                    Tip: Wait 60s or disable "Confirm Email" in your Supabase Auth settings to remove this during development.
+                                </p>
+                            )}
                         </div>
                     )}
                     <form onSubmit={handleRegister} className="space-y-4">

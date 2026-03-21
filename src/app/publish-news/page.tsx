@@ -8,6 +8,8 @@ import dynamic from 'next/dynamic';
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 import 'react-quill-new/dist/quill.snow.css';
 
+import { supabase } from "@/lib/supabase";
+import { publishArticleAction } from "./actions";
 import {
     Card,
     CardHeader,
@@ -94,7 +96,7 @@ export default function PublishNewsPage() {
         console.log("Current Form Data:", formData);
 
         try {
-            const imageUrl: string | null = null;
+            const imageUrl: string = "";
 
             // Note: Image file upload is not currently supported (Supabase Storage removed).
             // If an image URL is needed, it can be provided via other means in the future.
@@ -102,46 +104,50 @@ export default function PublishNewsPage() {
                 console.log("Image file selected but upload is not currently supported. Skipping.");
             }
 
-            // 3. Construct Payload with snake_case keys for the API
+            // 3. Construct Payload perfectly matching the actual "news" database schema
             const insertPayload = {
                 title: formData.title,
                 category: formData.category,
-                platform: formData.platform || null,
                 summary: formData.summary,
                 content: formData.content,
-                source_name: formData.sourceName,
-                source_url: formData.sourceUrl || null,
-                author_name: userData?.name || user?.email || "Unknown",
-                author_id: user?.id,
+                source: formData.sourceName,
+                author_email: userData?.name || user?.email || "Unknown",
+                author_id: user?.id || null,
                 image_url: imageUrl,
+                views: 0
             };
 
-            console.log("Submitting payload to /api/publish-news:", insertPayload);
+            console.log("Routing directly to secure Server Action instead of browser fetch.", insertPayload);
 
-            // 4. Call the API route (relative URL — NOT absolute)
-            const response = await fetch('/api/publish-news', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(insertPayload),
-            });
-
-            console.log("API Response Status:", response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error("API Error Response Body:", errorText);
-                let errorMessage = `Server error (${response.status})`;
-                try {
-                    const errorJson = JSON.parse(errorText);
-                    errorMessage = errorJson.error || errorMessage;
-                } catch {
-                    // errorText was not JSON, use status-based message
+            // Extract session token from LocalStorage manually to avoid session manager deadlocks
+            let token = "";
+            if (typeof window !== 'undefined') {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.includes('-auth-token')) {
+                        try {
+                            const parsed = JSON.parse(localStorage.getItem(key) || '{}');
+                            token = parsed.access_token || "";
+                            break;
+                        } catch(e) {}
+                    }
                 }
-                throw new Error(errorMessage);
             }
 
-            const result = await response.json();
-            console.log("Article successfully saved to database:", result.data);
+            if (!token) {
+                throw new Error("No active session token found. Please log in again.");
+            }
+
+            // 5. Blast data directly through a NodeJS Server Action
+            // This 100% bypasses any browser connection locks, extensions, or cross-origin limits
+            const result = await publishArticleAction(insertPayload, token);
+
+            if (!result.success) {
+                console.error("Server Action Failed:", result.error);
+                throw new Error(result.error || "Failed to insert article into database via server action.");
+            }
+
+            console.log("Article successfully saved to database with ID:", result.data?.id);
 
             setSubmitted(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });

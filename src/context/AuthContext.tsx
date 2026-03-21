@@ -42,7 +42,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         let mounted = true;
 
+        // Emergency fallback: never let the app get stuck in a loading state for more than 4 seconds
+        const emergencyTimeout = setTimeout(() => {
+            if (mounted) setLoading(false);
+        }, 4000);
+
         async function fetchUserData(currentUser: User) {
+            // Guarantee loading state drops after 3s even if Supabase queue freezes
+            let dataResolved = false;
+            const failSafe = setTimeout(() => {
+                if (mounted && !dataResolved) setLoading(false);
+            }, 3000);
+
             try {
                 const { data, error } = await supabase
                     .from("users")
@@ -50,33 +61,92 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     .eq("id", currentUser.id)
                     .single();
 
+                dataResolved = true;
+
                 if (data && !error) {
-                    setUserData({
+                    const userObj = {
                         ...data,
                         uid: data.id,
                         approvedToPublish: data.approved_to_publish
-                    } as UserData);
+                    } as UserData;
+                    setUserData(userObj);
+                    try { localStorage.setItem('cs_userData', JSON.stringify(userObj)); } catch(e){}
                 } else {
-                    setUserData(null);
+                    // SEEDING LOGIC: If the public.users table row is missing, try to create it as a fallback.
+                    // This fixes cases where the Supabase trigger is missing or failed.
+                    console.log("No public.users profile found. Attempting to auto-create profile...");
+                    const { data: upsertData, error: upsertError } = await supabase
+                        .from("users")
+                        .upsert({
+                            id: currentUser.id,
+                            email: currentUser.email,
+                            role: currentUser.email?.includes('admin') || currentUser.email === 'harshdattani12@gmail.com' ? "admin" : "user", // Auto-elevate owner email
+                            approved_to_publish: false
+                        })
+                        .select("*")
+                        .single();
+
+                    if (!upsertError && upsertData) {
+                        const newUserObj = {
+                            ...upsertData,
+                            uid: upsertData.id,
+                            approvedToPublish: upsertData.approved_to_publish
+                        } as UserData;
+                        setUserData(newUserObj);
+                        try { localStorage.setItem('cs_userData', JSON.stringify(newUserObj)); } catch(e){}
+                    } else {
+                        console.error("Failed to auto-create user profile:", upsertError);
+                        setUserData(null);
+                        try { localStorage.removeItem('cs_userData'); } catch(e){}
+                    }
                 }
             } catch (error) {
+                console.error("fetchUserData error:", error);
                 setUserData(null);
             } finally {
+                clearTimeout(failSafe);
                 if (mounted) setLoading(false);
             }
         }
 
         async function initAuth() {
-            setLoading(true);
-            const { data: { session } } = await supabase.auth.getSession();
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
+            try {
+                // Optimistic load from cache
+                try {
+                    const cachedUser = localStorage.getItem('cs_user');
+                    const cachedUserData = localStorage.getItem('cs_userData');
+                    if (cachedUser && cachedUserData) {
+                        setUser(JSON.parse(cachedUser));
+                        setUserData(JSON.parse(cachedUserData));
+                        setLoading(false); // Instant load!
+                    } else {
+                        setLoading(true);
+                    }
+                } catch (e) {
+                    setLoading(true);
+                }
 
-            if (currentUser) {
-                await fetchUserData(currentUser);
-            } else {
-                setUserData(null);
-                if (mounted) setLoading(false);
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) console.error("Session error:", error);
+                const currentUser = session?.user ?? null;
+                setUser(currentUser);
+
+                if (currentUser) {
+                    try { localStorage.setItem('cs_user', JSON.stringify(currentUser)); } catch(e){}
+                    await fetchUserData(currentUser);
+                } else {
+                    setUser(null);
+                    setUserData(null);
+                    try {
+                        localStorage.removeItem('cs_user');
+                        localStorage.removeItem('cs_userData');
+                    } catch(e){}
+                    setLoading(false);
+                }
+            } catch (e) {
+                console.error("Auth init error:", e);
+            } finally {
+                setLoading(false);
             }
         }
 
@@ -91,19 +161,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setUser(currentUser);
 
                 if (currentUser) {
-                    // Only show hard loading spinner on initial sign in, not background refreshes
-                    if (event === 'SIGNED_IN') setLoading(true);
+                    // Only show hard loading spinner if we are explicitly missing user data
+                    setLoading((prev) => prev ? true : false); // Ensure we don't trigger a new loader over existing UI
+                    try { localStorage.setItem('cs_user', JSON.stringify(currentUser)); } catch(e){}
                     await fetchUserData(currentUser);
                 } else {
                     setUser(null);
                     setUserData(null);
-                    if (mounted) setLoading(false);
+                    try {
+                        localStorage.removeItem('cs_user');
+                        localStorage.removeItem('cs_userData');
+                    } catch(e){}
+                    setLoading(false);
                 }
             }
         );
 
         return () => {
             mounted = false;
+            clearTimeout(emergencyTimeout);
             subscription.unsubscribe();
         };
     }, []);

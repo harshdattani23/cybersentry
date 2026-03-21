@@ -35,7 +35,7 @@ export default function AdminDashboard() {
         if (!loading) {
             if (!user) {
                 router.push("/login");
-            } else if (userData && userData.role !== "admin") {
+            } else if (!userData || userData.role !== "admin") {
                 router.push("/");
             }
         }
@@ -43,9 +43,23 @@ export default function AdminDashboard() {
 
     // Fetch User list
     useEffect(() => {
+        let mounted = true;
+
+        // Emergency safety timeout to forcefully kill the loader
+        const emergencyTimeout = setTimeout(() => {
+            if (mounted) setFetchingUsers(false);
+        }, 3000);
+
         const fetchAllUsers = async () => {
-            if (!userData || userData.role !== "admin") return;
+            if (!userData || userData.role !== "admin") {
+                if (mounted) setFetchingUsers(false);
+                return;
+            }
             try {
+                // Ensure the Supabase client has initialized the session auth headers 
+                // before making the request, otherwise RLS blocks it and returns 0 rows.
+                await supabase.auth.getSession();
+
                 const { data, error } = await supabase
                     .from("users")
                     .select("*");
@@ -63,18 +77,24 @@ export default function AdminDashboard() {
                     if (a.approvedToPublish === b.approvedToPublish) return 0;
                     return a.approvedToPublish ? 1 : -1;
                 });
-                setUsersList(allUsers);
+                
+                if (mounted) setUsersList(allUsers);
             } catch (error) {
                 console.error("Error fetching users roster:", error);
             } finally {
-                setFetchingUsers(false);
+                if (mounted) setFetchingUsers(false);
             }
         };
 
         if (userData?.role === "admin") {
             fetchAllUsers();
         }
-    }, [userData]);
+
+        return () => {
+            mounted = false;
+            clearTimeout(emergencyTimeout);
+        };
+    }, [userData?.uid, userData?.role]);
 
     const handleToggleApproval = async (targetUid: string, currentStatus: boolean) => {
         try {
@@ -205,7 +225,7 @@ export default function AdminDashboard() {
                                                         className={`w-full md:w-[160px] ${listUser.approvedToPublish ? "hover:bg-red-50 hover:text-red-700 hover:border-red-200" : "bg-emerald-600 hover:bg-emerald-700 text-white"}`}
                                                         onClick={() => handleToggleApproval(listUser.uid, listUser.approvedToPublish)}
                                                     >
-                                                        {listUser.approvedToPublish ? "Revoke Access" : "Approve Publisher"}
+                                                        {listUser.approvedToPublish ? "Revoke Publish" : "Allow to Publish"}
                                                     </Button>
                                                 )}
                                                 {listUser.role === 'admin' && (
@@ -246,9 +266,11 @@ export default function AdminDashboard() {
                                                                             {article.status.toUpperCase()}
                                                                         </Badge>
                                                                     </div>
-                                                                    <h5 className="font-semibold text-slate-900 group-hover/card:text-blue-700 transition-colors">
-                                                                        {article.title}
-                                                                    </h5>
+                                                                    <Link href={`/news/${article.id}`} target="_blank">
+                                                                        <h5 className="font-semibold text-slate-900 group-hover/card:text-blue-700 transition-colors cursor-pointer">
+                                                                            {article.title}
+                                                                        </h5>
+                                                                    </Link>
                                                                     <p className="text-sm text-slate-500 line-clamp-1 mt-1 font-serif max-w-2xl">
                                                                         {article.summary}
                                                                     </p>

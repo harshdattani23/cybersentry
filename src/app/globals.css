@@ -133,32 +133,40 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
 @layer components {
+
   /* Tailwind-styled React Quill Overrides */
   .react-quill-wrapper {
     @apply flex flex-col rounded-md border border-input shadow-sm transition-colors bg-white;
   }
+
   .react-quill-wrapper:focus-within {
     @apply ring-1 ring-ring border-ring;
   }
+
   .react-quill-wrapper .ql-toolbar.ql-snow {
     @apply border-0 border-b border-input bg-slate-50/50 rounded-t-md font-sans p-3 flex flex-wrap gap-2 sticky z-10;
     top: 5rem;
   }
+
   .react-quill-wrapper .ql-container.ql-snow {
     @apply border-0 bg-transparent rounded-b-md font-sans text-sm;
   }
+
   .react-quill-wrapper .ql-editor {
     @apply min-h-[350px] p-5 text-slate-900 leading-relaxed text-sm;
   }
+
   .react-quill-wrapper .ql-editor.ql-blank::before {
     @apply text-slate-400 not-italic left-5;
   }
+
   .react-quill-wrapper button:hover {
     @apply bg-slate-200/50 rounded;
   }
@@ -166,24 +174,28 @@
 
 @layer utilities {
   .material-symbols-outlined {
-      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
+
   .glass-panel {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
+
   .dark-glass {
-      background: rgba(13, 27, 42, 0.6);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(13, 27, 42, 0.6);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
+
   .bastion-gradient {
-      background: linear-gradient(135deg, #0D1B2A 0%, #1B263B 50%, #0D1B2A 100%);
+    background: linear-gradient(135deg, #0D1B2A 0%, #1B263B 50%, #0D1B2A 100%);
   }
+
   .grid-pattern {
-      background-image: radial-gradient(rgba(111, 251, 190, 0.1) 1px, transparent 0);
-      background-size: 30px 30px;
+    background-image: radial-gradient(rgba(111, 251, 190, 0.1) 1px, transparent 0);
+    background-size: 30px 30px;
   }
 }
