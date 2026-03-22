@@ -102,7 +102,7 @@ export default async function Home() {
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-outline-variant/20 hover:border-brand-accent/40 transition-all group">
-                <div className="w-12 h-12 bg-surface-container-low rounded-2xl flex items-center justify-center text-brand-primary mb-6 group-hover:bg-brand-accent/10 group-hover:text-brand-accent transition-colors">
+                <div className="w-12 h-12 bg-surface-container-low rounded-2xl flex items-center justify-center text-brand-primary mb-6 group-hover:bg-brand-accent/10 group-hover:text-brand-accent group-hover:drop-shadow-[0_0_8px_rgba(111,251,190,0.8)] transition-all">
                   <span className="material-symbols-outlined">security</span>
                 </div>
                 <div className="text-xs text-brand-secondary font-bold uppercase tracking-widest mb-2">Defense Integrity</div>
@@ -113,7 +113,7 @@ export default async function Home() {
                 </div>
               </div>
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-outline-variant/20 hover:border-red-200 transition-all group">
-                <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mb-6">
+                <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mb-6 group-hover:bg-red-100 group-hover:text-red-500 group-hover:drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-all">
                   <span className="material-symbols-outlined">emergency_home</span>
                 </div>
                 <div className="text-xs text-brand-secondary font-bold uppercase tracking-widest mb-2">Emerging Threats</div>
@@ -124,7 +124,7 @@ export default async function Home() {
                 </div>
               </div>
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-outline-variant/20 hover:border-brand-accent/40 transition-all group">
-                <div className="w-12 h-12 bg-surface-container-low rounded-2xl flex items-center justify-center text-brand-primary mb-6">
+                <div className="w-12 h-12 bg-surface-container-low rounded-2xl flex items-center justify-center text-brand-primary mb-6 group-hover:bg-brand-accent/10 group-hover:text-brand-accent group-hover:drop-shadow-[0_0_8px_rgba(111,251,190,0.8)] transition-all">
                   <span className="material-symbols-outlined">account_balance</span>
                 </div>
                 <div className="text-xs text-brand-secondary font-bold uppercase tracking-widest mb-2">Blocked Fraud</div>

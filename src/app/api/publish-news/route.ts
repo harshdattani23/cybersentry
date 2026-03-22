@@ -11,6 +11,11 @@ export async function POST(request: NextRequest) {
         
         // Initialize Supabase with the incoming auth header to bypass RLS restrictions securely
         const supabase = createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false,
+                detectSessionInUrl: false
+            },
             global: {
                 headers: authHeader ? { Authorization: authHeader } : {}
             }
@@ -46,6 +51,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Capture publisher's IP address securely
+        const forwarded = request.headers.get("x-forwarded-for");
+        const realIp = request.headers.get("x-real-ip");
+        let ip_address = "Unknown";
+        
+        if (forwarded) {
+            ip_address = forwarded.split(',')[0].trim();
+        } else if (realIp) {
+            ip_address = realIp;
+        }
+
         // Build exact insert payload mapping securely
         const insertPayload: Record<string, unknown> = {
             title,
@@ -58,7 +74,8 @@ export async function POST(request: NextRequest) {
             author_email,
             author_id: author_id || null,
             status: status || 'published',
-            views: views || 0
+            views: views || 0,
+            ip_address: ip_address
         };
 
         // Note: The schema for news has 'status' and 'platform' logic differences, 

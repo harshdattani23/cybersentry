@@ -13,6 +13,11 @@ export async function updateProfileAction(profileData: any, token: string) {
 
         // Initialize Supabase on the server with the user's token
         const supabase = createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false,
+                detectSessionInUrl: false
+            },
             global: {
                 headers: {
                     Authorization: `Bearer ${token}`

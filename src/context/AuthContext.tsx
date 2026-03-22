@@ -127,7 +127,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 }
 
                 const { data: { session }, error } = await supabase.auth.getSession();
-                if (error) console.error("Session error:", error);
+                if (error) {
+                    if (error.message.includes('Refresh Token Not Found') || error.message.includes('Invalid Refresh Token')) {
+                        // The user's stored refresh token is invalid (e.g. database wiped or session expired remotely)
+                        // Clear the local state gracefully.
+                        await supabase.auth.signOut();
+                    } else {
+                        console.error("Session error:", error);
+                    }
+                }
                 const currentUser = session?.user ?? null;
                 setUser(currentUser);
 
