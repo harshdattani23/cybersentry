@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from "@supabase/supabase-js";
+import { getGeoFromIp } from "@/lib/geoip";
 
 // Constants for initialization
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -62,6 +63,12 @@ export async function POST(request: NextRequest) {
             ip_address = realIp;
         }
 
+        // Fetch geo data for the publisher (handles private IPs automatically)
+        const geo = await getGeoFromIp(ip_address);
+        const country = geo.country;
+        const state = geo.state;
+        const city = geo.city;
+
         // Build exact insert payload mapping securely
         const insertPayload: Record<string, unknown> = {
             title,
@@ -77,9 +84,6 @@ export async function POST(request: NextRequest) {
             views: views || 0,
             ip_address: ip_address
         };
-
-        // Note: The schema for news has 'status' and 'platform' logic differences, 
-        // we'll adapt to 'source' and 'category'.
 
         if (image_url) {
             insertPayload.image_url = image_url;
@@ -98,6 +102,34 @@ export async function POST(request: NextRequest) {
         if (insertError) throw insertError;
 
         console.log('[publish-news] Article inserted successfully:', docRef?.id);
+
+        // Log publisher geo data into geo_logs table
+        try {
+            const userAgent = request.headers.get('user-agent') || '';
+            let device_type = 'desktop';
+            if (userAgent.includes('Mobile')) {
+                device_type = 'mobile';
+            } else if (userAgent.includes('Tablet')) {
+                device_type = 'tablet';
+            }
+
+            await supabase
+                .from('geo_logs')
+                .insert({
+                    event_type: 'article_publish',
+                    article_id: docRef?.id || null,
+                    user_id: author_id || null,
+                    user_email: author_email || null,
+                    ip_address: ip_address,
+                    country: country,
+                    state: state,
+                    city: city,
+                    device_type: device_type,
+                    user_agent: userAgent.substring(0, 500),
+                });
+        } catch (geoLogErr) {
+            console.error('Geo log insert error for publisher (non-fatal):', geoLogErr);
+        }
 
         return NextResponse.json(
             { success: true, data: { id: docRef?.id, ...insertPayload } },

@@ -96,12 +96,18 @@ export default function PublishNewsPage() {
         console.log("Current Form Data:", formData);
 
         try {
-            const imageUrl: string = "";
+            let imageUrl: string = "";
 
-            // Note: Image file upload is not currently supported (Supabase Storage removed).
-            // If an image URL is needed, it can be provided via other means in the future.
+            // Convert the featured image file to base64 data URI for storage
             if (imageFile) {
-                console.log("Image file selected but upload is not currently supported. Skipping.");
+                console.log("Converting featured image to base64...");
+                imageUrl = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = () => reject(new Error("Failed to read image file."));
+                    reader.readAsDataURL(imageFile);
+                });
+                console.log("Featured image converted successfully. Size:", Math.round(imageUrl.length / 1024), "KB");
             }
 
             // 3. Construct Payload perfectly matching the actual "news" database schema

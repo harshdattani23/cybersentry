@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from "@supabase/supabase-js";
+import { getGeoFromIp } from "@/lib/geoip";
 
 // Initialize a Supabase client using anon key (since service key isn't guaranteed here)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -32,33 +33,11 @@ export async function POST(request: NextRequest) {
             ip_address = realIp;
         }
 
-        // 2. Fetch geo data using a free IP API (with 3s timeout)
-        let country = 'Unknown';
-        let region = 'Unknown';
-        let city = 'Unknown';
-
-        if (ip_address === '::1' || ip_address === '127.0.0.1' || ip_address === 'Unknown') {
-            country = 'Localhost';
-            region = 'Localhost';
-            city = 'Localhost';
-        } else {
-            try {
-                const geoRes = await fetch(`https://ipapi.co/${ip_address}/json/`, {
-                    signal: AbortSignal.timeout(3000),
-                });
-                if (geoRes.ok) {
-                    const geoData = await geoRes.json();
-                    if (!geoData.error) {
-                        city = geoData.city || 'Unknown';
-                        region = geoData.region || 'Unknown';
-                        country = geoData.country_name || 'Unknown';
-                    }
-                }
-            } catch (err) {
-                console.error('Geo API fetch error (will store view with Unknown location):', err);
-                // Keep defaults — do NOT crash, still store the view
-            }
-        }
+        // 2. Fetch geo data (handles private IPs by falling back to public IP lookup)
+        const geo = await getGeoFromIp(ip_address);
+        const country = geo.country;
+        const region = geo.state;
+        const city = geo.city;
 
         // 3. Keep device type detection from user-agent
         const userAgent = request.headers.get('user-agent') || '';
@@ -72,9 +51,7 @@ export async function POST(request: NextRequest) {
             device_type = 'desktop';
         }
 
-        // Since we migrated to Supabase and don't have an article_views table 
-        // in the current schema snapshot, we will just fetch the current view 
-        // count and increment it. (In production, an RPC is better to prevent race conditions).
+        // 4. Increment view count on the news article
         try {
             const { data: article } = await supabase
                 .from('news')
@@ -90,6 +67,24 @@ export async function POST(request: NextRequest) {
             }
         } catch (updateErr) {
             console.error('Supabase update views error:', updateErr);
+        }
+
+        // 5. Insert geo log entry for this article view
+        try {
+            await supabase
+                .from('geo_logs')
+                .insert({
+                    event_type: 'article_view',
+                    article_id: article_id,
+                    ip_address: ip_address,
+                    country: country,
+                    state: region,
+                    city: city,
+                    device_type: device_type,
+                    user_agent: userAgent.substring(0, 500), // Truncate to avoid oversize
+                });
+        } catch (geoLogErr) {
+            console.error('Geo log insert error (non-fatal):', geoLogErr);
         }
 
         return NextResponse.json({ success: true });

@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers';
 import { createClient } from "@supabase/supabase-js";
+import { getGeoFromIp } from "@/lib/geoip";
 
 export async function publishArticleAction(insertPayload: any, token: string) {
     try {
@@ -41,6 +42,12 @@ export async function publishArticleAction(insertPayload: any, token: string) {
         // Append IP address to the article payload
         insertPayload.ip_address = ip_address;
 
+        // Fetch geo data for the publisher (handles private IPs automatically)
+        const geo = await getGeoFromIp(ip_address);
+        const country = geo.country;
+        const state = geo.state;
+        const city = geo.city;
+
         const { data, error } = await supabase
             .from("news")
             .insert(insertPayload)
@@ -49,6 +56,34 @@ export async function publishArticleAction(insertPayload: any, token: string) {
 
         if (error) {
             return { success: false, error: error.message || JSON.stringify(error) };
+        }
+
+        // Log publisher geo data into geo_logs table
+        try {
+            const userAgent = headersList.get("user-agent") || '';
+            let device_type = 'desktop';
+            if (userAgent.includes('Mobile')) {
+                device_type = 'mobile';
+            } else if (userAgent.includes('Tablet')) {
+                device_type = 'tablet';
+            }
+
+            await supabase
+                .from('geo_logs')
+                .insert({
+                    event_type: 'article_publish',
+                    article_id: data?.id || null,
+                    user_id: insertPayload.author_id || null,
+                    user_email: insertPayload.author_email || null,
+                    ip_address: ip_address,
+                    country: country,
+                    state: state,
+                    city: city,
+                    device_type: device_type,
+                    user_agent: userAgent.substring(0, 500),
+                });
+        } catch (geoLogErr) {
+            console.error('Geo log insert error for publisher (non-fatal):', geoLogErr);
         }
 
         return { success: true, data };

@@ -2,6 +2,8 @@ import { ShieldAlert } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from "@/lib/supabase";
+import { collectCardImages } from "@/lib/extractImage";
+import { CardImageCarousel } from "@/components/news/CardImageCarousel";
 
 export const dynamic = 'force-dynamic';
 
@@ -156,7 +158,7 @@ export default async function Home() {
                 <h2 className="font-headline text-4xl font-extrabold tracking-tight text-brand-primary mb-2">Latest News Articles</h2>
                 <p className="text-brand-secondary text-lg">Stay updated with the latest cyber fraud news and advisories submitted by our publishers.</p>
               </div>
-              <Link href="/cases">
+              <Link href="/news">
                   <button className="flex items-center gap-2 text-brand-primary font-bold border-b-2 border-brand-primary pb-1 hover:text-brand-accent transition-colors shrink-0">
                     Browse All News <span className="material-symbols-outlined">arrow_forward</span>
                   </button>
@@ -166,6 +168,7 @@ export default async function Home() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {latestNews && latestNews.length > 0 ? (
                 latestNews.map((news) => {
+                  const cardImages = collectCardImages(news.image_url, news.content);
                   let badgeColors = "bg-brand-accent/20 text-[#008f5d]";
                   if (news.category?.toLowerCase().includes("fraud") || news.category?.toLowerCase().includes("scam") || news.category?.toLowerCase().includes("critical")) {
                     badgeColors = "bg-red-100 text-red-700";
@@ -174,28 +177,34 @@ export default async function Home() {
                   }
 
                   return (
-                    <div key={news.id} className="bg-white p-8 rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group">
-                      <div className="flex justify-between items-start mb-6">
-                        <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${badgeColors}`}>
-                          {news.category || "News"}
-                        </span>
-                        <span className="text-xs text-brand-secondary">Latest</span>
+                    <div key={news.id} className="bg-white rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-shadow group overflow-hidden">
+                      {/* Card Image Carousel */}
+                      <div className="relative w-full h-48 overflow-hidden bg-gradient-to-br from-surface-container to-surface-container-high">
+                        <CardImageCarousel images={cardImages} alt={news.title} />
+                        <div className="absolute top-4 left-4 z-20">
+                          <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${badgeColors} backdrop-blur-sm`}>
+                            {news.category || "News"}
+                          </span>
+                        </div>
                       </div>
-                      <Link href={`/news/${news.id}`} target="_blank">
-                        <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors uppercase cursor-pointer">
-                          {news.title}
-                        </h4>
-                      </Link>
-                      <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">{news.summary}</p>
-                      <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
-                        <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">verified</span>
-                          Ref: {news.source || 'CyberSentry News'}
-                        </span>
-                        <Link href={`/news/${news.id}`} target="_blank" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
-                          Read More
-                          <span className="material-symbols-outlined text-sm">open_in_new</span>
+                      {/* Card Content */}
+                      <div className="p-8 flex flex-col flex-1">
+                        <Link href={`/news/${news.id}`} target="_blank">
+                          <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors uppercase cursor-pointer">
+                            {news.title}
+                          </h4>
                         </Link>
+                        <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">{news.summary}</p>
+                        <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
+                          <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm">verified</span>
+                            Ref: {news.source || 'CyberSentry News'}
+                          </span>
+                          <Link href={`/news/${news.id}`} target="_blank" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
+                            Read More
+                            <span className="material-symbols-outlined text-sm">open_in_new</span>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   );

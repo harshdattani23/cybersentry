@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShieldCheck, User, Newspaper, ExternalLink } from "lucide-react";
+import { Loader2, ShieldCheck, User, Newspaper, ExternalLink, Globe, Eye, Send, MapPin, Monitor, Smartphone, Tablet } from "lucide-react";
 import Link from "next/link";
 
 interface NewsArticle {
@@ -17,6 +17,21 @@ interface NewsArticle {
     summary: string;
     status: string;
     created_at: unknown;
+}
+
+interface GeoLog {
+    id: string;
+    event_type: 'article_view' | 'article_publish';
+    article_id: string | null;
+    user_id: string | null;
+    user_email: string | null;
+    ip_address: string;
+    country: string;
+    state: string;
+    city: string;
+    device_type: string;
+    user_agent: string | null;
+    created_at: string;
 }
 
 export default function AdminDashboard() {
@@ -29,6 +44,11 @@ export default function AdminDashboard() {
     // Key is uid of user, value is array of their articles
     const [userArticles, setUserArticles] = useState<Record<string, NewsArticle[]>>({});
     const [expandedUser, setExpandedUser] = useState<string | null>(null);
+
+    // Geo logs state
+    const [geoLogs, setGeoLogs] = useState<GeoLog[]>([]);
+    const [fetchingGeoLogs, setFetchingGeoLogs] = useState(true);
+    const [geoFilter, setGeoFilter] = useState<'all' | 'article_view' | 'article_publish'>('all');
 
     // Add security listener
     useEffect(() => {
@@ -96,6 +116,39 @@ export default function AdminDashboard() {
         };
     }, [userData?.uid, userData?.role]);
 
+    // Fetch Geo Logs
+    useEffect(() => {
+        let mounted = true;
+
+        const fetchGeoLogs = async () => {
+            if (!userData || userData.role !== "admin") {
+                if (mounted) setFetchingGeoLogs(false);
+                return;
+            }
+            try {
+                const { data, error } = await supabase
+                    .from('geo_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+
+                if (error) throw error;
+
+                if (mounted) setGeoLogs((data || []) as GeoLog[]);
+            } catch (error) {
+                console.error("Error fetching geo logs:", error);
+            } finally {
+                if (mounted) setFetchingGeoLogs(false);
+            }
+        };
+
+        if (userData?.role === "admin") {
+            fetchGeoLogs();
+        }
+
+        return () => { mounted = false; };
+    }, [userData?.uid, userData?.role]);
+
     const handleToggleApproval = async (targetUid: string, currentStatus: boolean) => {
         try {
             const { error } = await supabase
@@ -144,6 +197,37 @@ export default function AdminDashboard() {
         }
     };
 
+    // Filter geo logs
+    const filteredGeoLogs = geoFilter === 'all'
+        ? geoLogs
+        : geoLogs.filter(log => log.event_type === geoFilter);
+
+    // Stats
+    const totalViews = geoLogs.filter(l => l.event_type === 'article_view').length;
+    const totalPublishes = geoLogs.filter(l => l.event_type === 'article_publish').length;
+    const uniqueCountries = [...new Set(geoLogs.map(l => l.country).filter(c => c !== 'Unknown' && c !== 'Localhost'))].length;
+    const uniqueStates = [...new Set(geoLogs.map(l => l.state).filter(s => s !== 'Unknown' && s !== 'Localhost'))].length;
+    const uniqueCities = [...new Set(geoLogs.map(l => l.city).filter(c => c !== 'Unknown' && c !== 'Localhost'))].length;
+
+    const getDeviceIcon = (device: string) => {
+        switch (device) {
+            case 'mobile': return <Smartphone className="h-3.5 w-3.5" />;
+            case 'tablet': return <Tablet className="h-3.5 w-3.5" />;
+            default: return <Monitor className="h-3.5 w-3.5" />;
+        }
+    };
+
+    const formatTimeAgo = (dateStr: string) => {
+        const now = new Date();
+        const date = new Date(dateStr);
+        const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (diff < 60) return `${diff}s ago`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return `${Math.floor(diff / 86400)}d ago`;
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center py-32">
@@ -168,6 +252,173 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
+                {/* ===== GEO SECURITY INTEL SECTION ===== */}
+                <div className="mb-8">
+                    <Card className="border-indigo-100 shadow-sm overflow-hidden">
+                        <CardHeader className="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 border-b border-indigo-100">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                <Globe className="h-5 w-5 text-indigo-600" />
+                                Geo Security Intelligence
+                                <Badge variant="secondary" className="ml-auto bg-indigo-100 text-indigo-700 font-mono text-xs">
+                                    {geoLogs.length} Events Tracked
+                                </Badge>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0 bg-white">
+                            {/* Stats Row */}
+                            <div className="grid grid-cols-5 border-b border-slate-100">
+                                <div className="p-5 text-center border-r border-slate-100">
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                        <Eye className="h-4 w-4 text-blue-500" />
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Views</span>
+                                    </div>
+                                    <p className="text-2xl font-bold text-slate-900">{totalViews}</p>
+                                </div>
+                                <div className="p-5 text-center border-r border-slate-100">
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                        <Send className="h-4 w-4 text-emerald-500" />
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Publishes</span>
+                                    </div>
+                                    <p className="text-2xl font-bold text-slate-900">{totalPublishes}</p>
+                                </div>
+                                <div className="p-5 text-center border-r border-slate-100">
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                        <Globe className="h-4 w-4 text-indigo-500" />
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Countries</span>
+                                    </div>
+                                    <p className="text-2xl font-bold text-slate-900">{uniqueCountries}</p>
+                                </div>
+                                <div className="p-5 text-center border-r border-slate-100">
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                        <MapPin className="h-4 w-4 text-purple-500" />
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">States</span>
+                                    </div>
+                                    <p className="text-2xl font-bold text-slate-900">{uniqueStates}</p>
+                                </div>
+                                <div className="p-5 text-center">
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                        <MapPin className="h-4 w-4 text-rose-500" />
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cities</span>
+                                    </div>
+                                    <p className="text-2xl font-bold text-slate-900">{uniqueCities}</p>
+                                </div>
+                            </div>
+
+                            {/* Filter Tabs */}
+                            <div className="flex items-center gap-2 px-6 pt-4 pb-3">
+                                <button
+                                    onClick={() => setGeoFilter('all')}
+                                    className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all ${geoFilter === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                >
+                                    All Events
+                                </button>
+                                <button
+                                    onClick={() => setGeoFilter('article_view')}
+                                    className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all flex items-center gap-1.5 ${geoFilter === 'article_view' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                >
+                                    <Eye className="h-3 w-3" /> Views
+                                </button>
+                                <button
+                                    onClick={() => setGeoFilter('article_publish')}
+                                    className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all flex items-center gap-1.5 ${geoFilter === 'article_publish' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                >
+                                    <Send className="h-3 w-3" /> Publishes
+                                </button>
+                            </div>
+
+
+                            {/* Geo Logs Table */}
+                            {fetchingGeoLogs ? (
+                                <div className="flex justify-center p-12">
+                                    <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                                </div>
+                            ) : filteredGeoLogs.length === 0 ? (
+                                <div className="p-8 text-center text-slate-500">
+                                    No geo tracking events recorded yet. Events will appear here when users view or publish articles.
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-slate-100 bg-slate-50/50">
+                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Event</th>
+                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Country</th>
+                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">State</th>
+                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">City</th>
+                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">IP Address</th>
+                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Device</th>
+                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">User</th>
+                                                <th className="text-right px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">When</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {filteredGeoLogs.map((log) => (
+                                                <tr key={log.id} className="hover:bg-slate-50/80 transition-colors group">
+                                                    <td className="px-6 py-3.5">
+                                                        {log.event_type === 'article_view' ? (
+                                                            <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 text-[10px] font-bold gap-1">
+                                                                <Eye className="h-3 w-3" />
+                                                                VIEWED
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 text-[10px] font-bold gap-1">
+                                                                <Send className="h-3 w-3" />
+                                                                PUBLISHED
+                                                            </Badge>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3.5">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Globe className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                                                            <span className="font-semibold text-slate-900 text-sm">{log.country}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3.5">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <MapPin className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                                                            <span className="text-sm text-slate-700">{log.state}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3.5">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <MapPin className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                                                            <span className="text-sm font-medium text-slate-800">{log.city}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3.5">
+                                                        <code className="text-xs font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                                                            {log.ip_address}
+                                                        </code>
+                                                    </td>
+                                                    <td className="px-4 py-3.5">
+                                                        <div className="flex items-center gap-1.5 text-slate-500">
+                                                            {getDeviceIcon(log.device_type)}
+                                                            <span className="text-xs font-medium capitalize">{log.device_type}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3.5">
+                                                        {log.user_email ? (
+                                                            <span className="text-xs text-slate-700 font-medium">{log.user_email}</span>
+                                                        ) : (
+                                                            <span className="text-xs text-slate-400 italic">Anonymous</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-3.5 text-right">
+                                                        <span className="text-xs text-slate-500 font-medium" title={new Date(log.created_at).toLocaleString()}>
+                                                            {formatTimeAgo(log.created_at)}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* ===== EXISTING PUBLISHERS LIST ===== */}
                 <Card className="border-blue-100 shadow-sm overflow-hidden">
                     <CardHeader className="bg-white border-b border-slate-100">
                         <CardTitle className="text-lg font-bold flex items-center justify-between">
