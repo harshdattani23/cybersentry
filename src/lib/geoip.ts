@@ -53,24 +53,51 @@ export async function getGeoFromIp(ip_address: string): Promise<GeoResult> {
     }
 
     try {
-        // If private IP, call ipapi.co without an IP to get geo based on server's public IP
         const isPrivate = isPrivateOrLocalIp(ip_address);
-        const apiUrl = isPrivate
-            ? 'https://ipapi.co/json/'
-            : `https://ipapi.co/${ip_address}/json/`;
+        
+        let fetchSuccess = false;
 
-        const geoRes = await fetch(apiUrl, {
-            signal: AbortSignal.timeout(4000),
-        });
+        // 1. Try ip-api.com (Allows 45 requests per min, HTTP only)
+        const primaryUrl = isPrivate 
+            ? 'http://ip-api.com/json/' 
+            : `http://ip-api.com/json/${ip_address}`;
+            
+        try {
+            const res = await fetch(primaryUrl, { signal: AbortSignal.timeout(4000) });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.status === 'success') {
+                    country = data.country || 'Unknown';
+                    state = data.regionName || 'Unknown';
+                    city = data.city || 'Unknown';
+                    fetchSuccess = true;
+                }
+            }
+        } catch (e) {
+            console.error('ip-api.com fetch failed:', e);
+        }
 
-        if (geoRes.ok) {
-            const geoData = await geoRes.json();
-            if (!geoData.error) {
-                city = geoData.city || 'Unknown';
-                state = geoData.region || 'Unknown';
-                country = geoData.country_name || 'Unknown';
+        // 2. Fallback to freeipapi.com if primary fails
+        if (!fetchSuccess) {
+            const fallbackUrl = isPrivate 
+                ? 'https://freeipapi.com/api/json/' 
+                : `https://freeipapi.com/api/json/${ip_address}`;
+                
+            try {
+                const fallbackRes = await fetch(fallbackUrl, { signal: AbortSignal.timeout(4000) });
+                if (fallbackRes.ok) {
+                    const fallbackData = await fallbackRes.json();
+                    if (fallbackData.countryName) {
+                        country = fallbackData.countryName || 'Unknown';
+                        state = fallbackData.regionName || 'Unknown';
+                        city = fallbackData.cityName || 'Unknown';
+                    }
+                }
+            } catch (fallbackErr) {
+                console.error('freeipapi.com fetch failed:', fallbackErr);
             }
         }
+
     } catch (err) {
         console.error('Geo API fetch error (non-fatal, will store with Unknown):', err);
     }

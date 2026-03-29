@@ -16,7 +16,7 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { article_id } = body;
+        const { article_id, user_id, user_email } = body;
 
         if (!article_id) {
             return NextResponse.json({ success: false, error: 'Missing article_id' }, { status: 400 });
@@ -76,6 +76,8 @@ export async function POST(request: NextRequest) {
                 .insert({
                     event_type: 'article_view',
                     article_id: article_id,
+                    user_id: user_id || null,
+                    user_email: user_email || null,
                     ip_address: ip_address,
                     country: country,
                     state: region,
