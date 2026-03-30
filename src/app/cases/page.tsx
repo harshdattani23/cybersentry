@@ -65,7 +65,7 @@ export default function CasesPage() {
             // Real-time listener using Supabase
             const channel = supabase
                 .channel("public:cases")
-                .on("postgres_changes", { event: "*", schema: "public", table: "cases" }, (payload) => {
+                .on("postgres_changes", { event: "*", schema: "public", table: "cases" }, (payload: any) => {
                     fetchCases();
                 })
                 .subscribe();

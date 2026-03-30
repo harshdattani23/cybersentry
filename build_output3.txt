@@ -1,0 +1,32 @@
+
+> web-portal@0.1.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\abhinav\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\abhinav\Desktop\CyberSentryy\package-lock.json
+
+▲ Next.js 16.1.7 (Turbopack)
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.4s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/page.tsx:171:33
+Type error: Parameter 'news' implicitly has an 'any' type.
+
+[0m [90m 169 |[39m             [33m<[39m[33mdiv[39m className[33m=[39m[32m"grid md:grid-cols-2 lg:grid-cols-3 gap-8"[39m[33m>[39m
+ [90m 170 |[39m               {latestNews [33m&&[39m latestNews[33m.[39mlength [33m>[39m [35m0[39m [33m?[39m (
+[31m[1m>[22m[39m[90m 171 |[39m                 latestNews[33m.[39mmap((news) [33m=>[39m {
+ [90m     |[39m                                 [31m[1m^[22m[39m
+ [90m 172 |[39m                   [36mconst[39m cardImages [33m=[39m collectCardImages(news[33m.[39mimage_url[33m,[39m news[33m.[39mcontent)[33m;[39m
+ [90m 173 |[39m                   [36mlet[39m badgeColors [33m=[39m [32m"bg-brand-accent/20 text-[#008f5d]"[39m[33m;[39m
+ [90m 174 |[39m                   [36mif[39m (news[33m.[39mcategory[33m?[39m[33m.[39mtoLowerCase()[33m.[39mincludes([32m"fraud"[39m) [33m||[39m news[33m.[39mcategory[33m?[39m[33m.[39mtoLowerCase()[33m.[39mincludes([32m"scam"[39m) [33m||[39m news[33m.[39mcategory[33m?[39m[33m.[39mtoLowerCase()[33m.[39mincludes([32m"critical"[39m)) {[0m
+Next.js build worker exited with code: 1 and signal: null

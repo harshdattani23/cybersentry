@@ -168,7 +168,7 @@ export default async function Home() {
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {latestNews && latestNews.length > 0 ? (
-                latestNews.map((news) => {
+                latestNews.map((news: any) => {
                   const cardImages = collectCardImages(news.image_url, news.content);
                   let badgeColors = "bg-brand-accent/20 text-[#008f5d]";
                   if (news.category?.toLowerCase().includes("fraud") || news.category?.toLowerCase().includes("scam") || news.category?.toLowerCase().includes("critical")) {
