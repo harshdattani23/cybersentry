@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-export async function submitReportAction(insertPayload: any, fileDataUrl: string | null) {
+export async function submitReportAction(formData: FormData) {
     try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -11,7 +11,6 @@ export async function submitReportAction(insertPayload: any, fileDataUrl: string
             return { success: false, error: "Supabase environment variables missing on server." };
         }
 
-        // Initialize a clean, sterile Supabase instance just for this transaction
         const supabase = createClient(supabaseUrl, supabaseKey, {
             auth: {
                 persistSession: false,
@@ -20,26 +19,30 @@ export async function submitReportAction(insertPayload: any, fileDataUrl: string
             }
         });
 
-        // Try to upload the file to storage if base64 is provided
+        // Parse standard fields
+        const insertPayload: any = {
+            title: formData.get('title') as string,
+            category: formData.get('category') as string,
+            platform: formData.get('platform') as string,
+            description: formData.get('description') as string,
+            phone: formData.get('phone') as string,
+            url: formData.get('url') as string,
+            status: 'under_review',
+            is_public: true,
+        };
+
+        const file = formData.get('file') as File | null;
         let uploadedFileUrl = "";
-        if (fileDataUrl) {
+
+        if (file && file.size > 0) {
             try {
-                // Convert base64 to buffer
-                const base64Data = fileDataUrl.replace(/^data:image\/\w+;base64,/, "");
-                const buffer = Buffer.from(base64Data, 'base64');
-                
-                // Determine mime type from data URL
-                const mimeMatch = fileDataUrl.match(/^data:(image\/\w+);base64,/);
-                const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-                const fileExt = mimeType.split('/')[1] || 'jpg';
-                
+                const fileExt = file.name.split('.').pop() || 'jpg';
                 const fileName = `evidence-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
                 const { error: uploadError } = await supabase.storage
                     .from('evidence')
-                    .upload(fileName, buffer, {
-                        contentType: mimeType,
-                        upsert: false
+                    .upload(fileName, file, {
+                         upsert: false
                     });
 
                 if (!uploadError) {
@@ -56,12 +59,12 @@ export async function submitReportAction(insertPayload: any, fileDataUrl: string
         }
 
         // Insert into database
-        const { error: insertError } = await supabase.from("cases").insert(insertPayload).select("id");
+        const { error: insertError } = await supabase.from("cases").insert(insertPayload).select();
 
         if (insertError) {
              if (insertError.message.includes('evidence_url')) {
                  delete insertPayload.evidence_url;
-                 const { error: retryError } = await supabase.from("cases").insert(insertPayload).select("id");
+                 const { error: retryError } = await supabase.from("cases").insert(insertPayload).select();
                  if (retryError) return { success: false, error: retryError.message };
              } else {
                  return { success: false, error: insertError.message };

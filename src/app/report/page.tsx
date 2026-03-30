@@ -90,28 +90,19 @@ export default function ReportFraudPage() {
         const finalUrl = formData.platform === 'website' ? formData.websiteUrl : formData.upi;
 
         try {
-            let fileDataUrl: string | null = null;
+            const submitForm = new FormData();
+            submitForm.append('title', formData.title);
+            submitForm.append('category', formData.category);
+            submitForm.append('platform', finalPlatform);
+            submitForm.append('description', formData.description);
+            submitForm.append('phone', formData.phone);
+            submitForm.append('url', finalUrl);
+            
             if (file) {
-                fileDataUrl = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = () => reject(new Error("Failed to read evidence file."));
-                    reader.readAsDataURL(file);
-                });
+                submitForm.append('file', file);
             }
 
-            const insertPayload: any = {
-                title: formData.title,
-                category: formData.category,
-                platform: finalPlatform,
-                description: formData.description,
-                phone: formData.phone,
-                url: finalUrl,
-                status: 'under_review',
-                is_public: true,
-            };
-
-            const result = await submitReportAction(insertPayload, fileDataUrl);
+            const result = await submitReportAction(submitForm);
 
             if (!result.success) {
                 throw new Error(result.error);
