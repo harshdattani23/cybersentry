@@ -20,6 +20,9 @@ export async function publishArticleAction(insertPayload: any, token: string) {
         if (!insertPayload.source || insertPayload.source.length > 100) {
             return { success: false, error: "Source name is too long. Max 100 characters allowed." };
         }
+        if (insertPayload.source_url && insertPayload.source_url.length > 500) {
+            return { success: false, error: "Source URL is too long. Max 500 characters allowed." };
+        }
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -126,6 +129,9 @@ export async function editArticleAction(articleId: string, authorId: string, upd
         }
         if (!updatePayload.source || updatePayload.source.length > 100) {
             return { success: false, error: "Source name is too long. Max 100 characters allowed." };
+        }
+        if (updatePayload.source_url && updatePayload.source_url.length > 500) {
+            return { success: false, error: "Source URL is too long. Max 500 characters allowed." };
         }
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

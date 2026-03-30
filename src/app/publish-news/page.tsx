@@ -180,6 +180,7 @@ export default function PublishNewsPage() {
                 summary: formData.summary,
                 content: formData.content,
                 source: formData.sourceName,
+                source_url: formData.sourceUrl,
                 author_email: userData?.name || user?.email || "Unknown",
                 author_id: user?.id || null,
                 image_url: imageUrl,
@@ -430,10 +431,14 @@ export default function PublishNewsPage() {
                                 <Input
                                     id="sourceUrl"
                                     type="url"
+                                    maxLength={500}
                                     placeholder="https://..."
                                     value={formData.sourceUrl}
                                     onChange={handleInputChange}
                                 />
+                                <p className="text-xs text-slate-400 mt-1 text-right">
+                                    {formData.sourceUrl.length} / 500
+                                </p>
                             </div>
                         </div>
 
