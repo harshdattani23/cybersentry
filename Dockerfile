@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
 # Step 1. Rebuild the source code only when needed
 FROM base AS builder
@@ -17,6 +17,11 @@ COPY tsconfig.json .
 COPY postcss.config.mjs .
 COPY eslint.config.mjs .
 COPY components.json .
+COPY *.config.* ./
+COPY *.json ./
+COPY *.ts ./
+COPY *.mjs ./
+COPY *.js ./
 
 # Pass build-time environment variables so Next.js static generation works
 ARG NEXT_PUBLIC_SUPABASE_URL
