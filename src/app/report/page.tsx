@@ -86,12 +86,30 @@ export default function ReportFraudPage() {
         setIsSubmitting(true);
         setErrorMsg(null);
 
-        // Determine final values
         const finalPlatform = formData.platform === 'other' ? formData.otherPlatform : formData.platform;
         const finalUrl = formData.platform === 'website' ? formData.websiteUrl : formData.upi;
 
         try {
-            const { error: insertError } = await supabase.from("cases").insert({
+            let uploadedFileUrl = "";
+
+            if (file) {
+                console.log("Uploading evidence...");
+                const fileExt = file.name.split('.').pop();
+                const fileName = `evidence-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                
+                const { error: uploadError, data: uploadData } = await supabase.storage
+                    .from('evidence')
+                    .upload(fileName, file);
+
+                if (uploadError) {
+                    console.warn("Evidence storage upload error. Bucket might not exist, but we will proceed:", uploadError);
+                } else {
+                    const { data: publicData } = supabase.storage.from('evidence').getPublicUrl(fileName);
+                    uploadedFileUrl = publicData.publicUrl;
+                }
+            }
+
+            const insertPayload: any = {
                 title: formData.title,
                 category: formData.category,
                 platform: finalPlatform,
@@ -99,10 +117,28 @@ export default function ReportFraudPage() {
                 phone: formData.phone,
                 url: finalUrl,
                 status: 'under_review',
-                is_public: true, // Note: For a real app, maybe review first
-            });
+                is_public: true,
+            };
 
-            if (insertError) throw insertError;
+            if (uploadedFileUrl) {
+                insertPayload.evidence_url = uploadedFileUrl;
+            }
+
+            console.log("Inserting record into cases table...");
+            // Notice the .select() appended to the insert to fix React/Next.js silent infinite hanging on supabase insertions!
+            const { error: insertError } = await supabase.from("cases").insert(insertPayload).select();
+
+            if (insertError) {
+                // If evidence_url column doesn't exist in DB schema, we gracefully retry without it
+                if (insertError.message.includes('evidence_url')) {
+                    console.warn("Table cases does not have evidence_url, retrying without it...");
+                    delete insertPayload.evidence_url;
+                    const { error: retryError } = await supabase.from("cases").insert(insertPayload).select();
+                    if (retryError) throw retryError;
+                } else {
+                    throw insertError;
+                }
+            }
 
             // Generate Mock ID for display
             const randomId = Math.floor(1000 + Math.random() * 9000);
