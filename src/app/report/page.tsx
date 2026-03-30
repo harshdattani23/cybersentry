@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, UploadCloud, ShieldCheck, ArrowRight, Lock, Loader2, Info } from "lucide-react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { submitReportAction } from "./actions";
 
 export default function ReportFraudPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,23 +90,14 @@ export default function ReportFraudPage() {
         const finalUrl = formData.platform === 'website' ? formData.websiteUrl : formData.upi;
 
         try {
-            let uploadedFileUrl = "";
-
+            let fileDataUrl: string | null = null;
             if (file) {
-                console.log("Uploading evidence...");
-                const fileExt = file.name.split('.').pop();
-                const fileName = `evidence-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-                
-                const { error: uploadError, data: uploadData } = await supabase.storage
-                    .from('evidence')
-                    .upload(fileName, file);
-
-                if (uploadError) {
-                    console.warn("Evidence storage upload error. Bucket might not exist, but we will proceed:", uploadError);
-                } else {
-                    const { data: publicData } = supabase.storage.from('evidence').getPublicUrl(fileName);
-                    uploadedFileUrl = publicData.publicUrl;
-                }
+                fileDataUrl = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = () => reject(new Error("Failed to read evidence file."));
+                    reader.readAsDataURL(file);
+                });
             }
 
             const insertPayload: any = {
@@ -120,31 +111,13 @@ export default function ReportFraudPage() {
                 is_public: true,
             };
 
-            if (uploadedFileUrl) {
-                insertPayload.evidence_url = uploadedFileUrl;
+            const result = await submitReportAction(insertPayload, fileDataUrl);
+
+            if (!result.success) {
+                throw new Error(result.error);
             }
 
-            console.log("Inserting record into cases table...");
-            // Notice the .select() appended to the insert to fix React/Next.js silent infinite hanging on supabase insertions!
-            const { error: insertError } = await supabase.from("cases").insert(insertPayload).select();
-
-            if (insertError) {
-                // If evidence_url column doesn't exist in DB schema, we gracefully retry without it
-                if (insertError.message.includes('evidence_url')) {
-                    console.warn("Table cases does not have evidence_url, retrying without it...");
-                    delete insertPayload.evidence_url;
-                    const { error: retryError } = await supabase.from("cases").insert(insertPayload).select();
-                    if (retryError) throw retryError;
-                } else {
-                    throw insertError;
-                }
-            }
-
-            // Generate Mock ID for display
-            const randomId = Math.floor(1000 + Math.random() * 9000);
-            const newCaseId = `CS-IND-2026-${randomId}`;
-
-            setCaseId(newCaseId);
+            setCaseId(result.caseId || `CS-IND-2026-0000`);
             setIsSubmitted(true);
 
             // Clear form
