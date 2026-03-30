@@ -37,16 +37,31 @@ export async function submitReportAction(formData: FormData) {
 
         if (file && file.size > 0) {
             try {
-                const fileExt = file.name.split('.').pop() || 'jpg';
+                const fileExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
                 const fileName = `evidence-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                // Map extension to mime type (Server Action FormData can lose mime info)
+                const mimeMap: Record<string, string> = {
+                    'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+                    'png': 'image/png', 'gif': 'image/gif',
+                    'webp': 'image/webp', 'svg': 'image/svg+xml',
+                };
+                const contentType = mimeMap[fileExt] || file.type || 'image/jpeg';
+
+                // Convert File to ArrayBuffer for reliable server-side upload
+                const arrayBuffer = await file.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
 
                 const { error: uploadError } = await supabase.storage
                     .from('evidence')
-                    .upload(fileName, file, { upsert: false });
+                    .upload(fileName, buffer, { contentType, upsert: false });
 
-                if (!uploadError) {
+                if (uploadError) {
+                    console.warn("Evidence upload error:", uploadError.message);
+                } else {
                     const { data: publicData } = supabase.storage.from('evidence').getPublicUrl(fileName);
                     uploadedFileUrl = publicData.publicUrl;
+                    console.log("Evidence uploaded successfully:", uploadedFileUrl);
                 }
             } catch (err) {
                 console.log("Failed to upload evidence to storage, continuing without it:", err);
