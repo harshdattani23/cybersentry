@@ -51,6 +51,7 @@ export default function AdminDashboard() {
     const [geoLogs, setGeoLogs] = useState<GeoLog[]>([]);
     const [fetchingGeoLogs, setFetchingGeoLogs] = useState(true);
     const [geoFilter, setGeoFilter] = useState<'all' | 'article_view' | 'article_publish'>('all');
+    const [showAllGeoLogs, setShowAllGeoLogs] = useState(false);
 
     // Add security listener
     useEffect(() => {
@@ -374,7 +375,7 @@ export default function AdminDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
-                                            {filteredGeoLogs.map((log) => (
+                                            {filteredGeoLogs.slice(0, showAllGeoLogs ? undefined : 6).map((log) => (
                                                 <tr key={log.id} className="hover:bg-slate-50/80 transition-colors group">
                                                     <td className="px-6 py-3.5">
                                                         {log.event_type === 'article_view' ? (
@@ -443,6 +444,24 @@ export default function AdminDashboard() {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+                            )}
+
+                            {!fetchingGeoLogs && filteredGeoLogs.length > 6 && (
+                                <div className="p-4 border-t border-slate-50 text-center bg-slate-50/20">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => setShowAllGeoLogs(!showAllGeoLogs)}
+                                        className="text-indigo-600 font-bold hover:text-indigo-800 hover:bg-indigo-50 px-8 py-2 h-auto transition-all"
+                                    >
+                                        {showAllGeoLogs ? "Collapse Security Ledger" : "View Full Intelligence List"}
+                                        {showAllGeoLogs ? (
+                                            <ShieldCheck className="ml-2 h-4 w-4" />
+                                        ) : (
+                                            <ExternalLink className="ml-2 h-4 w-4" />
+                                        )}
+                                    </Button>
                                 </div>
                             )}
                         </CardContent>
