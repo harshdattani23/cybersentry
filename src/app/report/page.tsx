@@ -15,6 +15,7 @@ export default function ReportFraudPage() {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [caseId, setCaseId] = useState("");
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [phoneWarning, setPhoneWarning] = useState(false);
 
     const [file, setFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +47,18 @@ export default function ReportFraudPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
+
+        if (id === "phone") {
+            if (/[^0-9+]/.test(value)) {
+                setPhoneWarning(true);
+                setTimeout(() => setPhoneWarning(false), 3000);
+            } else {
+                setPhoneWarning(false);
+            }
+            const filteredValue = value.replace(/[^0-9+]/g, '');
+            setFormData(prev => ({ ...prev, phone: filteredValue }));
+            return;
+        }
 
         if (id === "platform") {
             setBgPlatform(value);
@@ -309,6 +322,11 @@ export default function ReportFraudPage() {
                                         onChange={handleChange}
                                         maxLength={20}
                                     />
+                                    {phoneWarning && (
+                                        <p className="text-xs text-red-500 animate-in fade-in transition-all">
+                                            Only numbers/digits are allowed.
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="upi">Suspicious UPI ID / URL</Label>
