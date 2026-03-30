@@ -23,10 +23,11 @@ import { supabase } from "@/lib/supabase";
 
 // Define the shape of our data
 interface FraudReport {
-    id: string; // Firestore document ID
+    id: string;
     title: string;
     category: string;
     platform: string;
+    description?: string;
     status: string;
     created_at: string;
     // visual fields
@@ -225,18 +226,28 @@ export default function CasesPage() {
 
                             return (
                                 <Link href={`/case/${item.id}`} key={item.id} className="group flex h-full">
-                                    <Card className="flex flex-col w-full border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 group-hover:border-blue-300 overflow-hidden">
-                                        {item.evidence_url && (
-                                            <div className="w-full h-40 bg-slate-100 overflow-hidden border-b border-slate-100 shrink-0">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img 
-                                                    src={item.evidence_url} 
-                                                    alt="Evidence Screenshot" 
-                                                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
-                                                />
-                                            </div>
-                                        )}
-                                        <CardHeader className="pb-3 flex-shrink-0">
+                                    <Card className="flex flex-col w-full border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 group-hover:border-blue-300 overflow-hidden">
+                                        {/* Evidence Image */}
+                                        <div className="w-full h-44 bg-slate-100 overflow-hidden border-b border-slate-100 shrink-0 relative">
+                                            {item.evidence_url ? (
+                                                <>  
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img 
+                                                        src={item.evidence_url} 
+                                                        alt="Evidence Screenshot" 
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                                </>
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+                                                    <ShieldAlert className="w-10 h-10 text-slate-300 mb-1" />
+                                                    <span className="text-[11px] text-slate-400 font-medium">No Evidence Attached</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <CardHeader className="pb-2 flex-shrink-0">
                                             <div className="flex justify-between items-start mb-2">
                                                 <Badge className={`${statusColor} hover:${statusColor} rounded px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold`}>
                                                     {getFormatStatus(item.status)}
@@ -249,6 +260,11 @@ export default function CasesPage() {
                                             <CardTitle className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-2">
                                                 {item.title || "Untitled Report"}
                                             </CardTitle>
+                                            {item.description && (
+                                                <p className="text-sm text-slate-500 line-clamp-3 mt-1.5 leading-relaxed">
+                                                    {item.description}
+                                                </p>
+                                            )}
                                         </CardHeader>
 
                                         <CardContent className="mt-auto">
