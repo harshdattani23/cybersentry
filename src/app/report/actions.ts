@@ -27,6 +27,7 @@ export async function submitReportAction(formData: FormData) {
             description: formData.get('description') as string,
             phone: formData.get('phone') as string,
             url: formData.get('url') as string,
+            priority: 'low',
             status: 'under_review',
             is_public: true,
         };
