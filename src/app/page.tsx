@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from "@/lib/supabase";
 import { collectCardImages } from "@/lib/extractImage";
+import { generateSlug } from "@/lib/utils";
 import { CardImageCarousel } from "@/components/news/CardImageCarousel";
 
 export const dynamic = 'force-dynamic';
@@ -189,7 +190,7 @@ export default async function Home() {
                       </div>
                       {/* Card Content */}
                       <div className="p-8 flex flex-col flex-1">
-                        <Link href={`/news/${news.id}`} target="_blank">
+                        <Link href={`/news/${generateSlug(news.title)}-${news.id}`} target="_blank">
                           <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors uppercase cursor-pointer">
                             {news.title}
                           </h4>
@@ -200,7 +201,7 @@ export default async function Home() {
                             <span className="material-symbols-outlined text-sm">verified</span>
                             Ref: {news.source || 'CyberSentry News'}
                           </span>
-                          <Link href={`/news/${news.id}`} target="_blank" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
+                          <Link href={`/news/${generateSlug(news.title)}-${news.id}`} target="_blank" className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1">
                             Read More
                             <span className="material-symbols-outlined text-sm">open_in_new</span>
                           </Link>

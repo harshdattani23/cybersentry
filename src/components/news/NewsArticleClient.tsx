@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Calendar, User, Globe, ArrowLeft } from "lucide-react";
+import { Calendar, User, Globe, ArrowLeft, Pencil } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export interface NewsArticle {
     id: string;
@@ -19,6 +20,7 @@ export interface NewsArticle {
     image_url: string | null;
     platform: string | null;
     status: string;
+    author_id: string | null;
 }
 
 interface NewsArticleClientProps {
@@ -34,6 +36,9 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
             day: 'numeric'
         });
     };
+
+    const { user } = useAuth();
+    const isAuthor = user && article.author_id === user.id;
 
     return (
         <article className="min-h-screen bg-white">
@@ -56,9 +61,19 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
                             )}
                         </div>
 
-                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight mb-6">
-                            {article.title}
-                        </h1>
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mb-6">
+                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
+                                {article.title}
+                            </h1>
+                            
+                            {isAuthor && (
+                                <Link href={`/edit-news/${article.id}`}>
+                                    <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 mt-2 sm:mt-0 flex whitespace-nowrap">
+                                        <Pencil className="mr-2 h-4 w-4" /> Edit Article
+                                    </Button>
+                                </Link>
+                            )}
+                        </div>
 
                         <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500 border-y border-slate-200 py-4">
                             <div className="flex items-center">

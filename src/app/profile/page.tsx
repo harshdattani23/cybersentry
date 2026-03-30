@@ -38,6 +38,16 @@ export default function ProfilePage() {
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+            if (!file.type.startsWith('image/')) {
+                const errorMsg = "Only image files are allowed. Documents or videos are not accepted";
+                setError(errorMsg);
+                alert(errorMsg);
+                e.target.value = ''; // Reset input
+                setAvatarFile(null);
+                setPreviewUrl(null);
+                return;
+            }
+            setError(null);
             setAvatarFile(file);
             setPreviewUrl(URL.createObjectURL(file));
         }
@@ -213,7 +223,7 @@ export default function ProfilePage() {
                                 </div>
                                 <input 
                                     type="file" 
-                                    accept="image/*" 
+                                    accept="image/jpeg, image/png, image/webp" 
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                     onChange={handleFileChange}
                                     title="Upload Profile Picture"
@@ -241,33 +251,45 @@ export default function ProfilePage() {
                             <Input
                                 id="name"
                                 required
+                                maxLength={60}
                                 placeholder="Your full name"
                                 className="border-outline-variant/50 focus-visible:ring-brand-accent focus-visible:border-brand-accent transition-all"
                                 value={formData.name}
                                 onChange={handleInputChange}
                             />
+                            <p className="text-xs text-slate-400 mt-1 text-right">
+                                {formData.name.length} / 60
+                            </p>
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="designation" className="text-sm font-bold text-brand-primary">Designation / Title</Label>
                             <Input
                                 id="designation"
+                                maxLength={100}
                                 placeholder="e.g. Cyber Security Analyst"
                                 className="border-outline-variant/50 focus-visible:ring-brand-accent focus-visible:border-brand-accent transition-all"
                                 value={formData.designation}
                                 onChange={handleInputChange}
                             />
+                            <p className="text-xs text-slate-400 mt-1 text-right">
+                                {formData.designation.length} / 100
+                            </p>
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="bio" className="text-sm font-bold text-brand-primary">Short Bio</Label>
                             <Textarea
                                 id="bio"
+                                maxLength={300}
                                 placeholder="A few sentences about yourself and your expertise..."
                                 className="min-h-[100px] border-outline-variant/50 focus-visible:ring-brand-accent focus-visible:border-brand-accent transition-all"
                                 value={formData.bio}
                                 onChange={handleInputChange}
                             />
+                            <p className="text-xs text-slate-400 mt-1 text-right">
+                                {formData.bio.length} / 300
+                            </p>
                         </div>
 
                         <div className="pt-4 border-t border-slate-100 flex justify-end gap-4">

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
+import { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 export interface UserData {
     id: string;
@@ -95,7 +95,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         setUserData(newUserObj);
                         try { localStorage.setItem('cs_userData', JSON.stringify(newUserObj)); } catch(e){}
                     } else {
-                        console.error("Failed to auto-create user profile:", upsertError);
+                        // A DOMException (like AbortError) or native Error won't show properties in a generic console.log sometimes,
+                        // so we log its message or serialize it manually to prevent the cryptic `{}` output.
+                        const errorDetails = upsertError instanceof Error 
+                            ? upsertError.message 
+                            : typeof upsertError === 'object' && upsertError !== null 
+                                ? JSON.stringify(upsertError, Object.getOwnPropertyNames(upsertError)) 
+                                : String(upsertError);
+                        
+                        console.error(`Failed to auto-create user profile: ${errorDetails}`);
                         setUserData(null);
                         try { localStorage.removeItem('cs_userData'); } catch(e){}
                     }
@@ -161,7 +169,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         initAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
+            async (event: AuthChangeEvent, session: Session | null) => {
                 // Ignore INITIAL_SESSION to prevent race condition with getSession()
                 if (event === 'INITIAL_SESSION') return;
 

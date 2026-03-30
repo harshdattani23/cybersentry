@@ -14,12 +14,16 @@ export async function generateMetadata({
     params: Promise<{ id: string }>;
 }): Promise<Metadata> {
     const { id } = await params;
+    
+    // Extract actual UUID if a slug is present
+    const match = id.match(/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$/);
+    const actualId = match ? match[1] : id;
 
     try {
         const { data: article, error } = await supabase
             .from("news")
             .select("title, summary, image_url")
-            .eq("id", id)
+            .eq("id", actualId)
             .single();
 
         if (error || !article) {
@@ -49,7 +53,11 @@ export default async function Page({
 }) {
     const { id } = await params;
 
-    console.log("Article ID:", id);
+    // Extract actual UUID if a slug is present
+    const match = id.match(/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$/);
+    const actualId = match ? match[1] : id;
+
+    console.log("Article ID:", actualId);
 
     // Guard: if id is missing or empty, show not found
     if (!id) {
@@ -75,7 +83,7 @@ export default async function Page({
         const { data: docData, error: dbError } = await supabase
             .from("news")
             .select("*")
-            .eq("id", id)
+            .eq("id", actualId)
             .single();
 
         if (dbError || !docData) {
@@ -87,13 +95,14 @@ export default async function Page({
                 category: docData.category || "",
                 summary: docData.summary || "",
                 content: docData.content || "",
-                author_name: docData.author_name || "",
-                source_name: docData.source_name || "",
+                author_name: docData.author_email || docData.author_name || "CyberSentry Team",
+                source_name: docData.source || docData.source_name || "Unknown Source",
                 source_url: docData.source_url || null,
                 created_at: docData.created_at || "",
                 image_url: docData.image_url || null,
                 platform: docData.platform || null,
                 status: docData.status || "",
+                author_id: docData.author_id || null,
             };
         }
     } catch (error) {

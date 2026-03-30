@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, ChangeEvent, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import dynamic from 'next/dynamic';
 
@@ -9,7 +9,7 @@ const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 import 'react-quill-new/dist/quill.snow.css';
 
 import { supabase } from "@/lib/supabase";
-import { publishArticleAction } from "./actions";
+import { editArticleAction } from "@/app/publish-news/actions";
 import {
     Card,
     CardHeader,
@@ -23,7 +23,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-export default function PublishNewsPage() {
+export default function EditNewsPage() {
+    const params = useParams();
+    const [articleId, setArticleId] = useState<string | null>(null);
+
+    const [loadingData, setLoadingData] = useState(true);
     const [submitted, setSubmitted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -63,7 +67,58 @@ export default function PublishNewsPage() {
         sourceUrl: "",
     });
 
+    const [existingImageUrl, setExistingImageUrl] = useState<string>("");
     const [imageFile, setImageFile] = useState<File | null>(null);
+
+    // Initial fetch of data
+    useEffect(() => {
+        const fetchArticleData = async () => {
+            if (!params.id) return;
+            const fullIdStr = Array.isArray(params.id) ? params.id[0] : params.id;
+            const idComponents = fullIdStr.split('-');
+            const extractedId = idComponents[idComponents.length - 1];
+            setArticleId(extractedId);
+
+            try {
+                const { data, error } = await supabase
+                    .from("news")
+                    .select("*")
+                    .eq("id", extractedId)
+                    .single();
+
+                if (error) {
+                    setError("Article could not be found or loaded.");
+                } else if (data) {
+                    // Check ownership initially
+                    if (user && data.author_id !== user.id) {
+                        setError("Unauthorized: You are not the author of this article.");
+                    } else {
+                        setFormData({
+                            title: data.title || "",
+                            category: data.category || "",
+                            platform: data.platform || "",
+                            summary: data.summary || "",
+                            content: data.content || "",
+                            sourceName: data.source || "",
+                            sourceUrl: data.source_url || "",
+                        });
+                        if (data.image_url) {
+                            setExistingImageUrl(data.image_url);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                setError("Error loading article.");
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        if (user) {
+            fetchArticleData();
+        }
+    }, [params.id, user]);
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
@@ -103,12 +158,13 @@ export default function PublishNewsPage() {
         setSubmitting(true);
         setError(null);
 
-        // 1. Log the initial form data
-        console.log("Form Submission Started");
-        console.log("Current Form Data:", formData);
+        if (!articleId || !user) {
+             setError("Cannot identify the article or user to edit.");
+             setSubmitting(false);
+             return;
+        }
 
         // --- Client-Side Validation ---
-
         if (formData.title.trim().length < 10 || formData.title.length > 150) {
             setError("Title must be between 10 and 150 characters long.");
             setSubmitting(false);
@@ -134,12 +190,6 @@ export default function PublishNewsPage() {
             return;
         }
 
-        if (formData.content.length > 50000) {
-            setError("The article formatting is too large. Please reduce the size of embedded media.");
-            setSubmitting(false);
-            return;
-        }
-
         if (imageFile) {
             const maxSize = 5 * 1024 * 1024; // 5MB limit
             if (!imageFile.type.startsWith('image/')) {
@@ -155,7 +205,7 @@ export default function PublishNewsPage() {
         }
 
         try {
-            let imageUrl: string = "";
+            let imageUrl: string = existingImageUrl;
 
             // Convert the featured image file to base64 data URI for storage
             if (imageFile) {
@@ -166,25 +216,20 @@ export default function PublishNewsPage() {
                     reader.onerror = () => reject(new Error("Failed to read image file."));
                     reader.readAsDataURL(imageFile);
                 });
-                console.log("Featured image converted successfully. Size:", Math.round(imageUrl.length / 1024), "KB");
             }
 
-            // 3. Construct Payload perfectly matching the actual "news" database schema
-            const insertPayload = {
+            const updatePayload = {
                 title: formData.title,
                 category: formData.category,
+                platform: formData.platform,
                 summary: formData.summary,
                 content: formData.content,
                 source: formData.sourceName,
-                author_email: userData?.name || user?.email || "Unknown",
-                author_id: user?.id || null,
+                source_url: formData.sourceUrl,
                 image_url: imageUrl,
-                views: 0
             };
 
-            console.log("Routing directly to secure Server Action instead of browser fetch.", insertPayload);
-
-            // Extract session token from LocalStorage manually to avoid session manager deadlocks
+            // Extract session token from LocalStorage manually
             let token = "";
             if (typeof window !== 'undefined') {
                 for (let i = 0; i < localStorage.length; i++) {
@@ -203,46 +248,47 @@ export default function PublishNewsPage() {
                 throw new Error("No active session token found. Please log in again.");
             }
 
-            // 5. Blast data directly through a NodeJS Server Action
-            // This 100% bypasses any browser connection locks, extensions, or cross-origin limits
-            const result = await publishArticleAction(insertPayload, token);
+            const result = await editArticleAction(articleId, user.id, updatePayload, token);
 
             if (!result.success) {
-                console.error("Server Action Failed:", result.error);
-                throw new Error(result.error || "Failed to insert article into database via server action.");
+                throw new Error(result.error || "Failed to edit article database entry.");
             }
-
-            console.log("Article successfully saved to database with ID:", result.data?.id);
 
             setSubmitted(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Reset form
-            setFormData({
-                title: "",
-                category: "",
-                platform: "",
-                summary: "",
-                content: "",
-                sourceName: "",
-                sourceUrl: "",
-            });
-            setImageFile(null);
-
         } catch (err) {
-            console.error('CRITICAL Error submitting article:', err);
-            setError(err instanceof Error ? err.message : "An error occurred while submitting the article.");
+            console.error('CRITICAL Error editing article:', err);
+            setError(err instanceof Error ? err.message : "An error occurred while updating the article.");
         } finally {
             setSubmitting(false);
-            console.log("Form submission process finished.");
         }
     };
 
-    if (loading) {
+    if (loading || loadingData) {
         return (
             <div className="flex justify-center items-center py-24">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-900" />
-                <span className="ml-3 text-slate-600 font-medium">Checking authentication...</span>
+                <span className="ml-3 text-slate-600 font-medium">{loading ? 'Checking authentication...' : 'Loading article data...'}</span>
+            </div>
+        );
+    }
+    
+    // Explicit protection against unauthorized viewing of form
+    if (error && error.includes("Unauthorized")) {
+        return (
+            <div className="container mx-auto py-12 px-4 max-w-3xl">
+                <Card className="border-red-200 bg-red-50 shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="text-red-800 text-2xl">Access Denied</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-red-700 mb-6 font-semibold">
+                            {error}
+                        </p>
+                        <Button onClick={() => router.push("/")} className="bg-red-700 hover:bg-red-800 text-white">Return Home</Button>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
@@ -259,7 +305,7 @@ export default function PublishNewsPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-amber-700 mb-6">
-                            For security purposes, all news publishers must be manually verified. You will be able to publish articles once an administrator approves your account.
+                            For security purposes, all news publishers must be manually verified. You will be able to edit articles once an administrator approves your account.
                         </p>
                         <Button
                             onClick={() => router.push("/")}
@@ -278,20 +324,17 @@ export default function PublishNewsPage() {
             <div className="container mx-auto py-12 px-4 max-w-3xl">
                 <Card className="border-green-200 bg-green-50 shadow-sm">
                     <CardHeader>
-                        <CardTitle className="text-green-800 text-2xl">Submission Successful</CardTitle>
+                        <CardTitle className="text-green-800 text-2xl">Edit Successful</CardTitle>
                         <CardDescription className="text-green-700 text-lg">
-                            Your article has been submitted for review.
+                            Your article has been successfully updated.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-green-700 mb-6">
-                            Our team will review the content for accuracy and relevance. Once approved, it will be published to the CyberSentry India news section.
-                        </p>
                         <Button
-                            onClick={() => setSubmitted(false)}
+                            onClick={() => router.push(`/news/${articleId}`)}
                             className="bg-green-700 hover:bg-green-800 text-white"
                         >
-                            Submit Another Article
+                            View Updated Article
                         </Button>
                     </CardContent>
                 </Card>
@@ -302,9 +345,9 @@ export default function PublishNewsPage() {
     return (
         <div className="container mx-auto py-12 px-4 max-w-3xl">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">Publish Cyber Fraud News Article</h1>
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Edit Published News Article</h1>
                 <p className="text-slate-600">
-                    Submit verified cyber fraud–related news or advisories for review before being published on CyberSentry India.
+                    Update the information for your verified cyber fraud article.
                 </p>
             </div>
 
@@ -342,7 +385,7 @@ export default function PublishNewsPage() {
                                     onChange={handleInputChange}
                                 >
                                     <option value="">Select a category</option>
-                                    <option value="Banking Fraud">Banking Fraud</option> {/* Updated values to be human readable/consistent */}
+                                    <option value="Banking Fraud">Banking Fraud</option>
                                     <option value="UPI Fraud">UPI Fraud</option>
                                     <option value="Cyber Advisory">Cyber Advisory</option>
                                     <option value="Policy Update">Policy Update</option>
@@ -435,7 +478,13 @@ export default function PublishNewsPage() {
 
                         {/* Featured Image */}
                         <div className="space-y-2">
-                            <Label htmlFor="image">Upload Featured Image (Optional)</Label>
+                            <Label htmlFor="image">Replace Featured Image (Optional)</Label>
+                            {existingImageUrl && !imageFile && (
+                                <div className="mb-2 w-32 h-32 relative rounded-md overflow-hidden border border-slate-200">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={existingImageUrl} alt="Current Featured" className="object-cover w-full h-full" />
+                                </div>
+                            )}
                             <Input
                                 id="image"
                                 type="file"
@@ -443,51 +492,34 @@ export default function PublishNewsPage() {
                                 className="cursor-pointer"
                                 onChange={handleFileChange}
                             />
-                            <p className="text-xs text-slate-500">Supported formats: JPG, PNG, WebP. Max size: 5MB.</p>
-                        </div>
-
-                        {/* Author Name */}
-                        <div className="space-y-2">
-                            <Label htmlFor="authorName">Author Name <span className="text-red-500">*</span></Label>
-                            <Input
-                                id="authorName"
-                                readOnly
-                                className="bg-slate-100 text-slate-500 cursor-not-allowed"
-                                value={userData?.name || user?.email || "Loading..."}
-                            />
-                        </div>
-
-                        {/* Declaration */}
-                        <div className="flex items-start space-x-2 pt-2">
-                            <input
-                                type="checkbox"
-                                id="declaration"
-                                required
-                                className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
-                            />
-                            <Label htmlFor="declaration" className="text-sm font-normal leading-tight cursor-pointer">
-                                I confirm that this information is accurate to the best of my knowledge.
-                            </Label>
+                            <p className="text-xs text-slate-500">Supported formats: JPG, PNG, WebP. Max size: 5MB. Leave blank to keep existing image.</p>
                         </div>
 
                         {/* Submit Button */}
-                        <div className="pt-4">
+                        <div className="pt-4 flex items-center justify-between">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => router.back()}
+                                disabled={submitting}
+                            >
+                                Cancel
+                            </Button>
                             <Button
                                 type="submit"
-                                className="w-full md:w-auto bg-blue-900 hover:bg-blue-800 text-white px-8"
+                                className="bg-blue-900 hover:bg-blue-800 text-white px-8"
                                 disabled={submitting}
                             >
                                 {submitting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Submitting...
+                                        Saving...
                                     </>
                                 ) : (
-                                    "Submit Article for Review"
+                                    "Save Changes"
                                 )}
                             </Button>
                         </div>
-
                     </form>
                 </CardContent>
             </Card>

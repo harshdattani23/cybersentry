@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.geo_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+
 -- Create indexes for fast querying
 CREATE INDEX IF NOT EXISTS idx_geo_logs_event_type ON public.geo_logs (event_type);
 CREATE INDEX IF NOT EXISTS idx_geo_logs_created_at ON public.geo_logs (created_at DESC);

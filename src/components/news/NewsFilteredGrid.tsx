@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { collectCardImages } from "@/lib/extractImage";
+import { generateSlug } from "@/lib/utils";
 import { CardImageCarousel } from "@/components/news/CardImageCarousel";
 
 interface NewsItem {
@@ -41,7 +42,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
-  const [authorSearch, setAuthorSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -57,11 +58,13 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
 
   const filteredNews = useMemo(() => {
     return allNews.filter((news) => {
-      if (
-        authorSearch &&
-        !news.author_email?.toLowerCase().includes(authorSearch.toLowerCase())
-      ) {
-        return false;
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesAuthor = news.author_email?.toLowerCase().includes(query);
+        const matchesTitle = news.title?.toLowerCase().includes(query);
+        if (!matchesAuthor && !matchesTitle) {
+          return false;
+        }
       }
       if (selectedCategory && news.category !== selectedCategory) {
         return false;
@@ -78,13 +81,13 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
       }
       return true;
     });
-  }, [allNews, authorSearch, selectedCategory, dateFrom, dateTo]);
+  }, [allNews, searchQuery, selectedCategory, dateFrom, dateTo]);
 
   const hasActiveFilters =
-    authorSearch || selectedCategory || dateFrom || dateTo;
+    searchQuery || selectedCategory || dateFrom || dateTo;
 
   const clearAllFilters = () => {
-    setAuthorSearch("");
+    setSearchQuery("");
     setSelectedCategory("");
     setDateFrom("");
     setDateTo("");
@@ -126,20 +129,20 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
 
             {/* Filter Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-              {/* Author Name Search */}
+              {/* Search Articles */}
               <div className="space-y-2.5">
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest">
                   <span className="material-symbols-outlined text-brand-accent text-sm">
-                    person_search
+                    search
                   </span>
-                  Author Name
+                  Search Articles
                 </label>
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Search by author..."
-                    value={authorSearch}
-                    onChange={(e) => setAuthorSearch(e.target.value)}
+                    placeholder="Search by title or author..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     list="author-suggestions"
                     className="w-full px-4 py-3 rounded-xl bg-[#141d33] border border-[#253352] text-white placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300"
                   />
@@ -148,9 +151,9 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                       <option key={author} value={author} />
                     ))}
                   </datalist>
-                  {authorSearch && (
+                  {searchQuery && (
                     <button
-                      onClick={() => setAuthorSearch("")}
+                      onClick={() => setSearchQuery("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
                     >
                       <span className="material-symbols-outlined text-sm">
@@ -173,6 +176,7 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
                   className="w-full px-4 py-3 rounded-xl bg-[#141d33] border border-[#253352] text-white text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300 [color-scheme:dark]"
                 />
               </div>
@@ -189,6 +193,7 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
                   className="w-full px-4 py-3 rounded-xl bg-[#141d33] border border-[#253352] text-white text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300 [color-scheme:dark]"
                 />
               </div>
@@ -274,14 +279,14 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                   </span>
                   {/* Active filter tags */}
                   <div className="flex flex-wrap gap-2">
-                    {authorSearch && (
+                    {searchQuery && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-accent/15 text-brand-accent text-xs font-bold border border-brand-accent/20">
                         <span className="material-symbols-outlined text-xs">
-                          person
+                          search
                         </span>
-                        {authorSearch}
+                        {searchQuery}
                         <button
-                          onClick={() => setAuthorSearch("")}
+                          onClick={() => setSearchQuery("")}
                           className="ml-1 hover:text-white transition-colors text-base leading-none"
                         >
                           ×
@@ -385,7 +390,7 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                 </div>
                 {/* Card Content */}
                 <div className="p-8 flex flex-col flex-1">
-                  <Link href={`/news/${news.id}`} target="_blank">
+                  <Link href={`/news/${generateSlug(news.title)}-${news.id}`} target="_blank">
                     <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors uppercase cursor-pointer">
                       {news.title}
                     </h4>
@@ -401,7 +406,7 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                       Ref: {news.source || "CyberSentry News"}
                     </span>
                     <Link
-                      href={`/news/${news.id}`}
+                      href={`/news/${generateSlug(news.title)}-${news.id}`}
                       target="_blank"
                       className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1"
                     >

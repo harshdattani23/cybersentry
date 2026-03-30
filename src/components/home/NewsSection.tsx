@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Calendar, Newspaper, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { generateSlug } from "@/lib/utils";
 
 interface NewsArticle {
     id: string;
@@ -92,7 +93,7 @@ export function NewsSection() {
                                 return (
                                     <Link
                                         key={article.id}
-                                        href={`/news/${article.id}`}
+                                        href={`/news/${generateSlug(article.title)}-${article.id}`}
                                         className="block group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 rounded-lg break-inside-avoid mb-6"
                                     >
                                         <Card className="h-full hover:shadow-md transition-shadow duration-200 border-slate-200 bg-white overflow-hidden flex flex-col">

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, ShieldCheck, User, Newspaper, ExternalLink, Globe, Eye, Send, MapPin, Monitor, Smartphone, Tablet } from "lucide-react";
 import Link from "next/link";
+import { generateSlug } from "@/lib/utils";
 
 interface NewsArticle {
     id: string;
@@ -32,6 +33,7 @@ interface GeoLog {
     device_type: string;
     user_agent: string | null;
     created_at: string;
+    article_title?: string;
 }
 
 export default function AdminDashboard() {
@@ -86,7 +88,8 @@ export default function AdminDashboard() {
 
                 if (error) throw error;
 
-                const allUsers = (data || []).map(d => ({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const allUsers = (data || []).map((d: any) => ({
                     ...d,
                     uid: d.id,
                     approvedToPublish: d.approved_to_publish
@@ -133,6 +136,24 @@ export default function AdminDashboard() {
                     .limit(100);
 
                 if (error) throw error;
+
+                // Fetch article titles for the logs
+                const articleIds = Array.from(new Set((data || []).map((log: any) => log.article_id).filter(Boolean)));
+                if (articleIds.length > 0) {
+                    const { data: newsData } = await supabase
+                        .from('news')
+                        .select('id, title')
+                        .in('id', articleIds);
+                        
+                    const titleMap: Record<string, string> = {};
+                    (newsData || []).forEach((n: any) => {
+                        titleMap[n.id] = n.title;
+                    });
+                    
+                    data.forEach((log: any) => {
+                        log.article_title = titleMap[log.article_id] || "Unknown Article";
+                    });
+                }
 
                 if (mounted) setGeoLogs((data || []) as GeoLog[]);
             } catch (error) {
@@ -342,12 +363,13 @@ export default function AdminDashboard() {
                                         <thead>
                                             <tr className="border-b border-slate-100 bg-slate-50/50">
                                                 <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Event</th>
+                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Article</th>
+                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">User</th>
                                                 <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Country</th>
                                                 <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">State</th>
                                                 <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">City</th>
                                                 <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">IP Address</th>
                                                 <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Device</th>
-                                                <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">User</th>
                                                 <th className="text-right px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">When</th>
                                             </tr>
                                         </thead>
@@ -365,6 +387,22 @@ export default function AdminDashboard() {
                                                                 <Send className="h-3 w-3" />
                                                                 PUBLISHED
                                                             </Badge>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3.5 max-w-[200px]">
+                                                        {log.article_id ? (
+                                                            <Link href={`/news/${generateSlug(log.article_title || 'article')}-${log.article_id}`} target="_blank" className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline line-clamp-2" title={log.article_title || log.article_id}>
+                                                                {log.article_title || "Unknown Article"}
+                                                            </Link>
+                                                        ) : (
+                                                            <span className="text-xs text-slate-400 italic">N/A</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3.5">
+                                                        {log.user_email ? (
+                                                            <span className="text-xs text-slate-700 font-medium">{log.user_email}</span>
+                                                        ) : (
+                                                            <span className="text-xs text-slate-400 italic">Anonymous</span>
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3.5">
@@ -395,13 +433,6 @@ export default function AdminDashboard() {
                                                             {getDeviceIcon(log.device_type)}
                                                             <span className="text-xs font-medium capitalize">{log.device_type}</span>
                                                         </div>
-                                                    </td>
-                                                    <td className="px-4 py-3.5">
-                                                        {log.user_email ? (
-                                                            <span className="text-xs text-slate-700 font-medium">{log.user_email}</span>
-                                                        ) : (
-                                                            <span className="text-xs text-slate-400 italic">Anonymous</span>
-                                                        )}
                                                     </td>
                                                     <td className="px-6 py-3.5 text-right">
                                                         <span className="text-xs text-slate-500 font-medium" title={new Date(log.created_at).toLocaleString()}>
@@ -517,7 +548,7 @@ export default function AdminDashboard() {
                                                                             {article.status.toUpperCase()}
                                                                         </Badge>
                                                                     </div>
-                                                                    <Link href={`/news/${article.id}`} target="_blank">
+                                                                    <Link href={`/news/${generateSlug(article.title)}-${article.id}`} target="_blank">
                                                                         <h5 className="font-semibold text-slate-900 group-hover/card:text-blue-700 transition-colors cursor-pointer">
                                                                             {article.title}
                                                                         </h5>
@@ -526,7 +557,7 @@ export default function AdminDashboard() {
                                                                         {article.summary}
                                                                     </p>
                                                                 </div>
-                                                                <Link href={`/news/${article.id}`} target="_blank" className="text-slate-400 hover:text-blue-700 p-2">
+                                                                <Link href={`/news/${generateSlug(article.title)}-${article.id}`} target="_blank" className="text-slate-400 hover:text-blue-700 p-2">
                                                                     <ExternalLink className="h-5 w-5" />
                                                                 </Link>
                                                             </div>

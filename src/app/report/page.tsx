@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,21 @@ export default function ReportFraudPage() {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [caseId, setCaseId] = useState("");
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    const [file, setFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0];
+            if (selectedFile.type.startsWith("image/")) {
+                setFile(selectedFile);
+            } else {
+                alert("Please select an image file only.");
+                e.target.value = "";
+            }
+        }
+    };
 
     const [bgPlatform, setBgPlatform] = useState("");
 
@@ -95,6 +110,7 @@ export default function ReportFraudPage() {
                 upi: ""
             });
             setBgPlatform("");
+            setFile(null);
 
         } catch (error) {
             console.error("Error submitting report:", error);
@@ -167,13 +183,17 @@ export default function ReportFraudPage() {
 
                             {/* Title */}
                             <div className="space-y-2">
-                                <Label htmlFor="title">Report Title <span className="text-red-500">*</span></Label>
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="title">Report Title <span className="text-red-500">*</span></Label>
+                                    <span className="text-xs text-slate-500">{formData.title.length}/100</span>
+                                </div>
                                 <Input
                                     id="title"
                                     required
                                     placeholder="Short summary of the incident"
                                     value={formData.title}
                                     onChange={handleChange}
+                                    maxLength={100}
                                 />
                             </div>
 
@@ -241,6 +261,7 @@ export default function ReportFraudPage() {
                                         placeholder="https://example.com"
                                         value={formData.websiteUrl}
                                         onChange={handleChange}
+                                        maxLength={255}
                                     />
                                 </div>
                             )}
@@ -254,13 +275,17 @@ export default function ReportFraudPage() {
                                         placeholder="E.g. OLX, Quikr, Signal..."
                                         value={formData.otherPlatform}
                                         onChange={handleChange}
+                                        maxLength={50}
                                     />
                                 </div>
                             )}
 
                             {/* Description */}
                             <div className="space-y-2">
-                                <Label htmlFor="description">Incident Description <span className="text-red-500">*</span></Label>
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="description">Incident Description <span className="text-red-500">*</span></Label>
+                                    <span className="text-xs text-slate-500">{formData.description.length}/1000</span>
+                                </div>
                                 <Textarea
                                     id="description"
                                     placeholder="Describe what happened. Include dates, amounts, and specific messages received..."
@@ -268,7 +293,7 @@ export default function ReportFraudPage() {
                                     required
                                     value={formData.description}
                                     onChange={handleChange}
-                                    maxLength={300}
+                                    maxLength={1000}
                                 />
                             </div>
 
@@ -282,6 +307,7 @@ export default function ReportFraudPage() {
                                         placeholder="+91 XXXXX XXXXX"
                                         value={formData.phone}
                                         onChange={handleChange}
+                                        maxLength={20}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -292,18 +318,31 @@ export default function ReportFraudPage() {
                                         placeholder="example@upi or https://..."
                                         value={formData.upi}
                                         onChange={handleChange}
+                                        maxLength={255}
                                     />
                                 </div>
                             </div>
 
-                            {/* Evidence Upload (Visual Only) */}
+                            {/* Evidence Upload */}
                             <div className="space-y-2">
-                                <Label>Upload Evidence (Screenshots/PDF)</Label>
-                                <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer">
+                                <Label>Upload Evidence (Screenshots)</Label>
+                                <div 
+                                    className="border-2 border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
                                     <UploadCloud className="w-8 h-8 mb-2 text-slate-400" />
-                                    <span className="text-sm font-medium">Click to upload files</span>
-                                    <span className="text-xs text-slate-400 mt-1">JPG, PNG, PDF up to 5MB</span>
+                                    <span className="text-sm font-medium">
+                                        {file ? file.name : "Click to upload images"}
+                                    </span>
+                                    {!file && <span className="text-xs text-slate-400 mt-1">JPG, PNG up to 5MB</span>}
                                 </div>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    className="hidden" 
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
                             </div>
 
                         </CardContent>
