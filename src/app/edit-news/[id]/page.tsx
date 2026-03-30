@@ -128,7 +128,11 @@ export default function EditNewsPage() {
         }));
     };
 
-    const handleContentChange = (content: string) => {
+    const handleContentChange = (content: string, delta: any, source: string, editor: any) => {
+        if (editor.getLength() - 1 > 2000) {
+            editor.deleteText(2000, editor.getLength());
+            return;
+        }
         setFormData((prev) => ({
             ...prev,
             content,
