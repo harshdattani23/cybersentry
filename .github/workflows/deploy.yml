@@ -9,6 +9,7 @@ env:
   REGION: us-central1
   REPO_NAME: cybersentry-repo
   SERVICE_NAME: cybersentry
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   deploy:
