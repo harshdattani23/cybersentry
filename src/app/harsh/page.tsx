@@ -50,6 +50,7 @@ export default function AdminDashboard() {
     // Geo logs state
     const [geoLogs, setGeoLogs] = useState<GeoLog[]>([]);
     const [fetchingGeoLogs, setFetchingGeoLogs] = useState(true);
+    const [loadingTraceId, setLoadingTraceId] = useState<string | null>(null);
     const [geoFilter, setGeoFilter] = useState<'all' | 'article_view' | 'article_publish'>('all');
     const [showAllGeoLogs, setShowAllGeoLogs] = useState(false);
 
@@ -190,32 +191,33 @@ export default function AdminDashboard() {
         }
     };
 
-    const fetchUserArticles = async (targetUid: string) => {
+    const fetchUserArticles = async (targetId: string) => {
         // Toggle expansion
-        if (expandedUser === targetUid) {
+        if (expandedUser === targetId) {
             setExpandedUser(null);
             return;
         }
 
-        setExpandedUser(targetUid);
+        setExpandedUser(targetId);
 
         // Return if we already cached their articles
-        if (userArticles[targetUid]) return;
+        if (userArticles[targetId]) return;
 
+        setLoadingTraceId(targetId);
         try {
             const { data, error } = await supabase
                 .from("news")
                 .select("*")
-                .eq("author_id", targetUid)
+                .eq("author_id", targetId)
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
 
-            const articles = (data || []) as NewsArticle[];
-
-            setUserArticles(prev => ({ ...prev, [targetUid]: articles }));
+            setUserArticles(prev => ({ ...prev, [targetId]: (data || []) as NewsArticle[] }));
         } catch (error) {
             console.error("Error fetching articles for user:", error);
+        } finally {
+            setLoadingTraceId(null);
         }
     };
 
@@ -511,13 +513,18 @@ export default function AdminDashboard() {
 
                                             <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                                                 <Button
-                                                    variant="ghost"
+                                                    variant={expandedUser === listUser.id ? "secondary" : "ghost"}
                                                     size="sm"
-                                                    onClick={() => fetchUserArticles(listUser.uid)}
-                                                    className="w-full md:w-auto text-slate-600 border border-slate-200"
+                                                    onClick={() => fetchUserArticles(listUser.id)}
+                                                    disabled={loadingTraceId === listUser.id}
+                                                    className="w-full md:w-auto text-slate-600 border border-slate-200 gap-2"
                                                 >
-                                                    <Newspaper className="h-4 w-4 mr-2 text-slate-400" />
-                                                    View Trace History
+                                                    {loadingTraceId === listUser.id ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Newspaper className="h-4 w-4 text-slate-400" />
+                                                    )}
+                                                    {expandedUser === listUser.id ? "Hide Trace History" : "View Trace History"}
                                                 </Button>
 
                                                 {listUser.role !== 'admin' && (
@@ -538,7 +545,7 @@ export default function AdminDashboard() {
                                         </div>
 
                                         {/* Dropdown for Articles showing exactly what they submitted */}
-                                        {expandedUser === listUser.uid && (
+                                        {expandedUser === listUser.id && (
                                             <div className="bg-slate-50 px-6 py-6 border-t border-slate-100 inner-shadow-sm">
                                                 <div className="flex items-center justify-between mb-4">
                                                     <h4 className="font-semibold text-sm text-slate-700 uppercase tracking-wider">
@@ -546,17 +553,17 @@ export default function AdminDashboard() {
                                                     </h4>
                                                 </div>
 
-                                                {userArticles[listUser.uid] === undefined ? (
+                                                {userArticles[listUser.id] === undefined || loadingTraceId === listUser.id ? (
                                                     <div className="flex items-center text-sm text-slate-500 py-2">
-                                                        <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading records...
+                                                        <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading records from secure ledger...
                                                     </div>
-                                                ) : userArticles[listUser.uid].length === 0 ? (
+                                                ) : userArticles[listUser.id].length === 0 ? (
                                                     <div className="bg-white border border-slate-200 border-dashed rounded text-center p-6 text-slate-500 text-sm">
                                                         This user hasn&apos;t published any articles yet.
                                                     </div>
                                                 ) : (
                                                     <div className="grid gap-3">
-                                                        {userArticles[listUser.uid].map(article => (
+                                                        {userArticles[listUser.id].map(article => (
                                                             <div key={article.id} className="bg-white border border-slate-200 rounded p-4 flex justify-between items-center group/card hover:border-blue-300 transition-colors">
                                                                 <div>
                                                                     <div className="flex items-center gap-2 mb-1.5">
