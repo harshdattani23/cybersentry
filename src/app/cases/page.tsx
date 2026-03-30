@@ -40,58 +40,64 @@ export default function CasesPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchCases = async () => {
             try {
-                setIsLoading(true);
-                const { data, error } = await supabase
+                if (isMounted) setIsLoading(true);
+
+                // First try with is_public filter
+                let result = await supabase
                     .from("cases")
                     .select("*")
                     .eq("is_public", true)
                     .order("created_at", { ascending: false });
 
-                if (error) throw error;
-                setCases(data as FraudReport[] || []);
-            } catch (err) {
+                // If the is_public column doesn't exist, fall back to fetching all
+                if (result.error) {
+                    console.warn("Filtered query failed, falling back to unfiltered:", result.error.message);
+                    result = await supabase
+                        .from("cases")
+                        .select("*")
+                        .order("created_at", { ascending: false });
+                }
+
+                if (result.error) throw result.error;
+
+                if (isMounted) {
+                    setCases(result.data as FraudReport[] || []);
+                    setError(null);
+                }
+            } catch (err: any) {
                 console.error("Error fetching cases:", err);
-                setError("Failed to load cases. Please try again later.");
+                if (isMounted) {
+                    setError(err?.message || "Failed to load cases. Please try again later.");
+                }
             } finally {
-                setIsLoading(false);
+                if (isMounted) setIsLoading(false);
             }
         };
 
-        const setupListener = () => {
-            // Initial fetch
-            fetchCases();
+        // Initial fetch
+        fetchCases();
 
-            // Real-time listener using Supabase
-            const channel = supabase
+        // Set up realtime listener (non-blocking — won't prevent initial load)
+        let channel: any = null;
+        try {
+            channel = supabase
                 .channel("public:cases")
-                .on("postgres_changes", { event: "*", schema: "public", table: "cases" }, (payload: any) => {
+                .on("postgres_changes", { event: "*", schema: "public", table: "cases" }, () => {
                     fetchCases();
                 })
                 .subscribe();
-
-            return () => {
-                supabase.removeChannel(channel);
-            };
-        };
-
-        let unsubscribeFn: () => void;
-
-        try {
-            unsubscribeFn = setupListener();
         } catch (err) {
-            console.error("Error setting up cases listener:", err);
-            // Wait for the next tick to set state, avoiding synchronous state updates during render
-            setTimeout(() => {
-                setError("Failed to load cases. Please try again later.");
-                setIsLoading(false);
-            }, 0);
+            console.warn("Realtime subscription failed (non-fatal):", err);
         }
 
         return () => {
-            if (unsubscribeFn) {
-                unsubscribeFn();
+            isMounted = false;
+            if (channel) {
+                supabase.removeChannel(channel);
             }
         };
     }, []);
