@@ -151,7 +151,7 @@ export default function ContactPage() {
 
             {/* Optional: Additional contact info below the form */}
             <div className="mt-8 text-center text-sm text-slate-500">
-                <p>Alternatively, you can call our helpline at <span className="font-bold text-slate-700">1930</span></p>
+                <p>Alternatively, you can call the national cyber fraud helpline at <span className="font-bold text-slate-700">1930</span> if you are a victim of fraud.</p>
                 <p className="mt-1">For immediate cyber fraud reporting, please use the <a href="/report" className="text-blue-700 hover:underline">Report Fraud</a> page.</p>
             </div>
         </div>

@@ -8,8 +8,8 @@ import { AuthProvider } from "@/context/AuthContext";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "CyberSentry India – National Cyber Fraud Awareness Portal",
-  description: "The official national portal for cyber fraud awareness and prevention in India.",
+  title: "CyberSentry India – Cyber News & Updates",
+  description: "Your trusted source for cyber news and updates in India.",
 };
 
 export default function RootLayout({

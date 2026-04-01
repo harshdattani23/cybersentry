@@ -26,7 +26,7 @@ export function InfoSections() {
                     <div>
                         <h4 className="font-bold text-slate-800">Researcher Contributions</h4>
                         <p className="text-sm text-slate-600 mt-1">
-                            A dedicated portal for security researchers to submit technical analyses, scam breakdowns, and vulnerability insights. Collaborate with national defense.
+                            A dedicated platform for security researchers to submit technical analyses, scam breakdowns, and vulnerability insights. Share your insights with the community.
                         </p>
                     </div>
                 </div>
@@ -42,7 +42,7 @@ export function InfoSections() {
                             <CheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5" />
                             <div>
                                 <span className="font-semibold text-slate-800 block">Multi-Level Verification</span>
-                                <span className="text-sm text-slate-600">All reports undergo a rigorous verification process before becoming official advisories.</span>
+                                <span className="text-sm text-slate-600">All reports undergo a rigorous verification process before becoming verified news updates.</span>
                             </div>
                         </li>
                         <li className="flex items-start">
