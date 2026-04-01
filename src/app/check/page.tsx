@@ -234,13 +234,7 @@ export default function ScamCheckPage() {
                                         We could not find any existing fraud reports for this item in our public database.
                                         However, this does not guarantee safety.
                                     </p>
-                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                        <Button className="bg-slate-800 hover:bg-slate-900" asChild>
-                                            <Link href="/report">
-                                                Report This Incident <ArrowRight className="ml-2 w-4 h-4" />
-                                            </Link>
-                                        </Button>
-                                    </div>
+
                                 </CardContent>
                             </Card>
                         </div>

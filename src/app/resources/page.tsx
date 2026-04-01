@@ -132,9 +132,7 @@ export default function ResourcesPage() {
                         {/* Type 6 */}
                         <div className="flex flex-col justify-center items-center p-6 bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl text-center">
                             <p className="text-slate-500 font-medium mb-4">Have you encountered a new type of scam?</p>
-                            <Button variant="outline" className="bg-white" asChild>
-                                <Link href="/report">Report It Now</Link>
-                            </Button>
+
                         </div>
                     </div>
                 </section>
@@ -206,16 +204,7 @@ export default function ResourcesPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-white p-4 rounded-lg border border-red-100 shadow-sm flex items-start">
-                                <div className="mr-4 mt-1 bg-red-100 p-2 rounded-full text-red-600">
-                                    <ShieldAlert className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-900">3. Report on CyberSentry</h4>
-                                    <p className="text-sm text-slate-600 mt-1">Submit a report here to alert the community and authorities.</p>
-                                    <Link href="/report" className="text-sm font-bold text-red-600 hover:underline mt-1 inline-block">Report now &rarr;</Link>
-                                </div>
-                            </div>
+
                         </div>
                     </section>
                 </div>

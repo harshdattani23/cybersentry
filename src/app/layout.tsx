@@ -25,6 +25,9 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className={`min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans`}>
         <AuthProvider>
+          <div className="bg-amber-100 border-b border-amber-200 py-2 text-center text-amber-900 text-xs sm:text-sm font-bold tracking-wide px-4">
+            ⚠️ DISCLAIMER: This is an independent news website and is NOT an official government or ministry portal.
+          </div>
           <Header />
 
           <main id="main-content" className="flex-grow">

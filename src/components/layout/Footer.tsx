@@ -9,12 +9,7 @@ export function Footer() {
                     <p className="text-slate-400 normal-case tracking-normal max-w-md leading-relaxed mb-8">
                         Your source for the latest cybersecurity news, advisories, and threat updates.
                     </p>
-                    <Link href="/report">
-                        <button className="bg-brand-accent text-brand-primary font-black px-8 py-4 rounded-xl flex items-center gap-3 transition-opacity duration-300 hover:opacity-90">
-                            REPORT ANONYMOUSLY
-                            <span className="material-symbols-outlined text-sm">visibility_off</span>
-                        </button>
-                    </Link>
+
                 </div>
                 <div className="flex flex-col gap-6">
                     <span className="text-white font-bold text-sm">Assistance</span>
