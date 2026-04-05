@@ -21,12 +21,22 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileUp, Sparkles } from "lucide-react";
+import { Toaster, toast } from "react-hot-toast";
 
 export default function PublishNewsPage() {
     const [submitted, setSubmitted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [pdfFile, setPdfFile] = useState<File | null>(null);
+    const [extracting, setExtracting] = useState(false);
+    const [aiFilledFields, setAiFilledFields] = useState({
+        title: false,
+        category: false,
+        summary: false,
+        content: false,
+        sourceName: false,
+    });
 
     const quillModules = {
         toolbar: [
@@ -65,12 +75,89 @@ export default function PublishNewsPage() {
 
     const [imageFile, setImageFile] = useState<File | null>(null);
 
+    const mapCategory = (cat: string | undefined): string => {
+        if (!cat) return "Emerging Scam";
+
+        const c = cat.toLowerCase();
+
+        if (c.includes("upi")) return "UPI Fraud";
+        if (c.includes("bank") || c.includes("banking")) return "Banking Fraud";
+        if (c.includes("ai")) return "AI Fraud";
+        if (c.includes("policy") || c.includes("regulation")) return "Policy Update";
+        if (c.includes("advisory") || c.includes("warning")) return "Cyber Advisory";
+        if (c.includes("scam") || c.includes("fraud") || c.includes("phishing")) return "Emerging Scam";
+
+        return "Emerging Scam";
+    };
+
+    const handlePdfChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setPdfFile(e.target.files[0]);
+        } else {
+            setPdfFile(null);
+        }
+    };
+
+    const handleAutoFill = async () => {
+        if (!pdfFile) return;
+
+        setExtracting(true);
+        setError(null);
+
+        const toastId = toast.loading("Extracting data from PDF...");
+
+        try {
+            const fd = new FormData();
+            fd.append("file", pdfFile);
+
+            const res = await fetch("/api/extract-pdf", {
+                method: "POST",
+                body: fd,
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                setFormData((prev) => ({
+                    ...prev,
+                    title: data.data.title || prev.title,
+                    category: mapCategory(data.data.category),
+                    summary: data.data.summary || prev.summary,
+                    content: data.data.content || prev.content,
+                    sourceName: data.data.source || prev.sourceName,
+                }));
+                setAiFilledFields({
+                    title: !!data.data.title,
+                    category: !!data.data.category,
+                    summary: !!data.data.summary,
+                    content: !!data.data.content,
+                    sourceName: !!data.data.source,
+                });
+                toast.success("Fields auto-filled successfully!", { id: toastId });
+            } else {
+                const errMsg = data.error || "Failed to extract PDF content.";
+                setError(errMsg);
+                toast.error(errMsg, { id: toastId });
+            }
+        } catch (err) {
+            console.error("Auto-fill error:", err);
+            const errMsg = err instanceof Error ? err.message : "Failed to extract PDF content.";
+            setError(errMsg);
+            toast.error(errMsg, { id: toastId });
+        } finally {
+            setExtracting(false);
+        }
+    };
+
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setFormData((prev) => ({
             ...prev,
             [id]: value,
         }));
+        if (id in aiFilledFields) {
+            setAiFilledFields((prev) => ({ ...prev, [id]: false }));
+        }
     };
 
     const handleContentChange = (content: string, delta: any, source: string, editor: any) => {
@@ -82,6 +169,9 @@ export default function PublishNewsPage() {
             ...prev,
             content,
         }));
+        if (aiFilledFields.content) {
+            setAiFilledFields((prev) => ({ ...prev, content: false }));
+        }
     };
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -306,12 +396,53 @@ export default function PublishNewsPage() {
 
     return (
         <div className="container mx-auto py-12 px-4 max-w-3xl">
+            <Toaster position="top-right" toastOptions={{ style: { fontSize: '14px' } }} />
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">Publish Cyber Fraud News Article</h1>
                 <p className="text-slate-600">
                     Submit verified cyber fraud–related news or advisories for review before being published on CyberSentry India.
                 </p>
             </div>
+
+            {/* PDF Auto-Fill Section */}
+            <Card className="mb-6 border-dashed border-2 border-blue-300 bg-blue-50/40">
+                <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                        <div className="flex-1 space-y-2 w-full">
+                            <Label htmlFor="pdfUpload" className="text-sm font-semibold text-blue-900 flex items-center gap-2">
+                                <FileUp className="h-4 w-4" />
+                                Auto-Fill from PDF
+                            </Label>
+                            <p className="text-xs text-slate-500 mb-1">Upload a PDF document to automatically extract and fill in the form fields below.</p>
+                            <Input
+                                id="pdfUpload"
+                                type="file"
+                                accept="application/pdf"
+                                className="cursor-pointer bg-white"
+                                onChange={handlePdfChange}
+                            />
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={handleAutoFill}
+                            disabled={!pdfFile || extracting}
+                            className="bg-blue-700 hover:bg-blue-800 text-white px-6 whitespace-nowrap"
+                        >
+                            {extracting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Extracting...
+                                </>
+                            ) : (
+                                <>
+                                    <FileUp className="mr-2 h-4 w-4" />
+                                    Auto Fill from PDF
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardContent className="pt-6">
@@ -324,7 +455,10 @@ export default function PublishNewsPage() {
 
                         {/* Article Title */}
                         <div className="space-y-2">
-                            <Label htmlFor="title">Article Title <span className="text-red-500">*</span></Label>
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="title">Article Title <span className="text-red-500">*</span></Label>
+                                {aiFilledFields.title && <span className="ai-badge"><Sparkles className="h-3 w-3" /> AI Suggested</span>}
+                            </div>
                             <Input
                                 id="title"
                                 required
@@ -332,22 +466,26 @@ export default function PublishNewsPage() {
                                 placeholder="Enter the headline of the news article (max 150 characters)"
                                 value={formData.title}
                                 onChange={handleInputChange}
+                                className={aiFilledFields.title ? "ai-filled" : ""}
                             />
                         </div>
 
                         {/* News Category */}
                         <div className="space-y-2">
-                            <Label htmlFor="category">News Category <span className="text-red-500">*</span></Label>
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="category">News Category <span className="text-red-500">*</span></Label>
+                                {aiFilledFields.category && <span className="ai-badge"><Sparkles className="h-3 w-3" /> AI Suggested</span>}
+                            </div>
                             <div className="relative">
                                 <select
                                     id="category"
                                     required
-                                    className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                                    className={`flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 ${aiFilledFields.category ? "ai-filled" : ""}`}
                                     value={formData.category}
                                     onChange={handleInputChange}
                                 >
                                     <option value="">Select a category</option>
-                                    <option value="Banking Fraud">Banking Fraud</option> {/* Updated values to be human readable/consistent */}
+                                    <option value="Banking Fraud">Banking Fraud</option>
                                     <option value="UPI Fraud">UPI Fraud</option>
                                     <option value="Cyber Advisory">Cyber Advisory</option>
                                     <option value="Policy Update">Policy Update</option>
@@ -381,13 +519,16 @@ export default function PublishNewsPage() {
 
                         {/* Article Summary */}
                         <div className="space-y-2">
-                            <Label htmlFor="summary">Article Summary <span className="text-red-500">*</span></Label>
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="summary">Article Summary <span className="text-red-500">*</span></Label>
+                                {aiFilledFields.summary && <span className="ai-badge"><Sparkles className="h-3 w-3" /> AI Suggested</span>}
+                            </div>
                             <Textarea
                                 id="summary"
                                 required
                                 maxLength={500}
                                 placeholder="Brief summary of the article... (max 500 chars)"
-                                className="min-h-[80px]"
+                                className={`min-h-[80px] ${aiFilledFields.summary ? "ai-filled" : ""}`}
                                 value={formData.summary}
                                 onChange={handleInputChange}
                             />
@@ -398,8 +539,11 @@ export default function PublishNewsPage() {
 
                         {/* Full Article Content */}
                         <div className="space-y-2">
-                            <Label htmlFor="content" className="text-base font-semibold">Full Article Content <span className="text-red-500">*</span></Label>
-                            <div className="react-quill-wrapper">
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="content" className="text-base font-semibold">Full Article Content <span className="text-red-500">*</span></Label>
+                                {aiFilledFields.content && <span className="ai-badge"><Sparkles className="h-3 w-3" /> AI Suggested</span>}
+                            </div>
+                            <div className={`react-quill-wrapper ${aiFilledFields.content ? "ai-filled-quill" : ""}`}>
                                 <ReactQuill
                                     theme="snow"
                                     value={formData.content}
@@ -416,7 +560,10 @@ export default function PublishNewsPage() {
                         {/* Source Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="sourceName">Source / Organization Name <span className="text-red-500">*</span></Label>
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="sourceName">Source / Organization Name <span className="text-red-500">*</span></Label>
+                                    {aiFilledFields.sourceName && <span className="ai-badge"><Sparkles className="h-3 w-3" /> AI Suggested</span>}
+                                </div>
                                 <Input
                                     id="sourceName"
                                     required
@@ -424,6 +571,7 @@ export default function PublishNewsPage() {
                                     placeholder="e.g. RBI, Cyber Cell, News Agency"
                                     value={formData.sourceName}
                                     onChange={handleInputChange}
+                                    className={aiFilledFields.sourceName ? "ai-filled" : ""}
                                 />
                             </div>
                             <div className="space-y-2">
