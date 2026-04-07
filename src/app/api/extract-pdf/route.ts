@@ -26,44 +26,38 @@ export async function POST(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (supabaseUrl && supabaseServiceKey) {
-      if (supabaseServiceKey === "your-supabase-service-role-key-here" || !supabaseServiceKey.startsWith("eyJ")) {
-          return Response.json(
-            { success: false, error: "Missing or invalid SUPABASE_SERVICE_ROLE_KEY setup in .env file." },
-            { status: 500 }
-          );
+    if (supabaseUrl && supabaseServiceKey && supabaseServiceKey !== "your-supabase-service-role-key-here" && supabaseServiceKey.startsWith("eyJ")) {
+      try {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+        const originalName = file instanceof File ? file.name : "document.pdf";
+        const fileType = file instanceof File ? file.type : "application/pdf";
+        
+        console.log("Uploading file:", originalName);
+        
+        const fileName = `pdf-${Date.now()}-${originalName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("pdf-uploads")
+          .upload(fileName, buffer, {
+            contentType: fileType,
+          });
+
+        console.log("Upload result:", uploadData, uploadError);
+
+        if (uploadError) {
+          // Storage upload is non-fatal — log and continue with extraction
+          console.warn("[extract-pdf] PDF storage upload failed (non-fatal):", uploadError.message);
+        } else {
+          const { data: publicUrlData } = supabase.storage
+            .from("pdf-uploads")
+            .getPublicUrl(fileName);
+
+          pdfUrl = publicUrlData.publicUrl;
+        }
+      } catch (storageErr) {
+        console.warn("[extract-pdf] PDF storage upload error (non-fatal):", storageErr);
       }
-
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-      const originalName = file instanceof File ? file.name : "document.pdf";
-      const fileType = file instanceof File ? file.type : "application/pdf";
-      
-      console.log("Uploading file:", originalName);
-      
-      const fileName = `pdf-${Date.now()}-${originalName}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("pdf-uploads")
-        .upload(fileName, buffer, {
-          contentType: fileType,
-        });
-
-      console.log("Upload result:", uploadData, uploadError);
-
-      if (uploadError) {
-        return Response.json({
-          success: false,
-          message: "Upload failed",
-          error: uploadError.message
-        }, { status: 500 });
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from("pdf-uploads")
-        .getPublicUrl(fileName);
-
-      pdfUrl = publicUrlData.publicUrl;
     }
 
     // ── 3. Extract text from PDF ───────────────────────────────────────
