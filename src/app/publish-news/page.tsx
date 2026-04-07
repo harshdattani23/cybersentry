@@ -115,7 +115,20 @@ export default function PublishNewsPage() {
                 body: fd,
             });
 
-            const data = await res.json();
+            // Safely parse response — the server may return non-JSON (e.g. HTML error page)
+            let data;
+            const contentType = res.headers.get("content-type") || "";
+            if (!res.ok) {
+                // Try to extract a meaningful error message
+                if (contentType.includes("application/json")) {
+                    data = await res.json();
+                } else {
+                    const text = await res.text();
+                    throw new Error(text || `Server error (${res.status})`);
+                }
+            } else {
+                data = await res.json();
+            }
 
             if (data.success) {
                 setFormData((prev) => ({
