@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
     // ── 1. Get file from FormData ──────────────────────────────────────
     const formData = await req.formData();
     const file = formData.get("file");
+    console.log("Step 1: File received");
 
     if (!file || !(file instanceof Blob)) {
       return Response.json(
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     if (supabaseUrl && supabaseServiceKey && supabaseServiceKey !== "your-supabase-service-role-key-here" && supabaseServiceKey.startsWith("eyJ")) {
       try {
+        console.log("Step 2: Uploading to Supabase");
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         const originalName = file instanceof File ? file.name : "document.pdf";
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
     // ── 3. Extract text from PDF ───────────────────────────────────────
     let extractedText: string;
     try {
+      console.log("Step 3: Extracting PDF text");
       const pdf = new PDFParse({ data: new Uint8Array(buffer) });
       const textResult = await pdf.getText();
       extractedText = textResult.text;
@@ -116,6 +119,7 @@ ${extractedText}
 --- END EXTRACTED TEXT ---`;
 
     // ── 6. Generate structured response ────────────────────────────────
+    console.log("Step 4: Calling Gemini");
     const result = await model.generateContent(prompt);
     const rawText = result.response.text();
 
@@ -137,6 +141,7 @@ ${extractedText}
     // ── 6b. Safe JSON parse ────────────────────────────────────────────
     let parsed;
     try {
+      console.log("Step 5: Parsing response");
       parsed = JSON.parse(cleanText);
     } catch {
       console.error("[extract-pdf] Failed to parse AI response:", cleanText);
@@ -156,15 +161,13 @@ ${extractedText}
       data: parsed,
       pdfUrl: pdfUrl
     });
-  } catch (error: unknown) {
-    console.error("[extract-pdf] Error:", error);
+  } catch (error: any) {
+    console.error("API ERROR:", error);
 
-    const message =
-      error instanceof Error ? error.message : "Internal server error";
-
-    return Response.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    return Response.json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    }, { status: 500 });
   }
 }
