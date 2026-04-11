@@ -80,16 +80,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── 3. Extract text from PDF ───────────────────────────────────────
-    let extractedText: string;
+    // ── 3. Extract text from PDF (using pdfjs-dist, Node-compatible) ───
+    let extractedText = "";
     try {
-      console.log("Step 3: Dynamically importing pdf-parse");
-      const { PDFParse } = await import("pdf-parse");
-      console.log("Step 3a: pdf-parse loaded, extracting text");
-      const pdf = new PDFParse({ data: new Uint8Array(buffer) });
-      const textResult = await pdf.getText();
-      extractedText = textResult.text;
-      await pdf.destroy();
+      console.log("Step 3: Dynamically importing pdfjs-dist");
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      console.log("Step 3a: pdfjs-dist loaded, extracting text");
+
+      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+      const pdfDoc = await loadingTask.promise;
+
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const content = await page.getTextContent();
+        const strings = content.items
+          .filter((item: any) => "str" in item)
+          .map((item: any) => item.str);
+        extractedText += strings.join(" ") + "\n\n";
+      }
+
+      console.log("Step 3b: Extracted", extractedText.length, "characters from", pdfDoc.numPages, "pages");
     } catch (pdfErr: any) {
       console.error("[extract-pdf] PDF parsing failed:", pdfErr);
       return new Response(
