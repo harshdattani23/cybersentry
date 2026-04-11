@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { PDFParse } from "pdf-parse";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 
@@ -30,9 +29,9 @@ export async function POST(req: NextRequest) {
     console.log("Step 1: File received");
 
     if (!file || !(file instanceof Blob)) {
-      return Response.json(
-        { success: false, error: "No PDF file provided." },
-        { status: 400 }
+      return new Response(
+        JSON.stringify({ success: false, error: "No PDF file provided." }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -84,23 +83,31 @@ export async function POST(req: NextRequest) {
     // ── 3. Extract text from PDF ───────────────────────────────────────
     let extractedText: string;
     try {
-      console.log("Step 3: Extracting PDF text");
+      console.log("Step 3: Dynamically importing pdf-parse");
+      const { PDFParse } = await import("pdf-parse");
+      console.log("Step 3a: pdf-parse loaded, extracting text");
       const pdf = new PDFParse({ data: new Uint8Array(buffer) });
       const textResult = await pdf.getText();
       extractedText = textResult.text;
       await pdf.destroy();
-    } catch (pdfErr) {
+    } catch (pdfErr: any) {
       console.error("[extract-pdf] PDF parsing failed:", pdfErr);
-      return Response.json(
-        { success: false, error: "Failed to parse the PDF file. It may be corrupted or password-protected." },
-        { status: 422 }
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Failed to parse the PDF file: " + (pdfErr.message || "Unknown error"),
+        }),
+        {
+          status: 422,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
     if (!extractedText || extractedText.trim().length === 0) {
-      return Response.json(
-        { success: false, error: "Could not extract any text from the PDF." },
-        { status: 422 }
+      return new Response(
+        JSON.stringify({ success: false, error: "Could not extract any text from the PDF." }),
+        { status: 422, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -108,9 +115,9 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return Response.json(
-        { success: false, error: "GEMINI_API_KEY is not configured." },
-        { status: 500 }
+      return new Response(
+        JSON.stringify({ success: false, error: "GEMINI_API_KEY is not configured." }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -164,22 +171,25 @@ ${extractedText}
       parsed = JSON.parse(cleanText);
     } catch {
       console.error("[extract-pdf] Failed to parse AI response:", cleanText);
-      return Response.json(
-        {
+      return new Response(
+        JSON.stringify({
           success: false,
           error: "Invalid AI response — could not parse structured data.",
           raw: cleanText,
-        },
-        { status: 500 }
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // ── 7. Return structured data ──────────────────────────────────────
-    return Response.json({
-      success: true,
-      data: parsed,
-      pdfUrl: pdfUrl
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: parsed,
+        pdfUrl: pdfUrl,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error: any) {
     console.error("API ERROR:", error);
 
