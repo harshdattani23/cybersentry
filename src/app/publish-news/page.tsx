@@ -115,20 +115,22 @@ export default function PublishNewsPage() {
                 body: fd,
             });
 
-            // Safely parse response — the server may return non-JSON (e.g. HTML error page)
+            const text = await res.text();
+            console.log("API RAW RESPONSE:", text);
+
             let data;
-            const contentType = res.headers.get("content-type") || "";
-            if (!res.ok) {
-                // Try to extract a meaningful error message
-                if (contentType.includes("application/json")) {
-                    data = await res.json();
-                } else {
-                    const text = await res.text();
-                    throw new Error(text || `Server error (${res.status})`);
-                }
-            } else {
-                data = await res.json();
+
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error("Invalid JSON response: " + text);
             }
+
+            if (!res.ok) {
+                throw new Error(data?.message || text || "Request failed");
+            }
+
+            console.log("Parsed API Response:", data);
 
             if (data.success) {
                 setFormData((prev) => ({
