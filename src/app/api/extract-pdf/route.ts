@@ -183,9 +183,15 @@ ${extractedText}
   } catch (error: any) {
     console.error("API ERROR:", error);
 
-    return Response.json({
-      success: false,
-      message: error.message || "Internal Server Error"
-    }, { status: 500 });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: error.message || "Internal Server Error"
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
   }
 }
