@@ -5,6 +5,25 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: NextRequest) {
   try {
+    // ── 0. Env Validation ─────────────────────────────────────────────
+    console.log("ENV CHECK:", {
+      gemini: !!process.env.GEMINI_API_KEY,
+      supabase: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      url: !!process.env.NEXT_PUBLIC_SUPABASE_URL
+    });
+
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("Missing GEMINI_API_KEY");
+    }
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      throw new Error("Missing SUPABASE URL");
+    }
+
     // ── 1. Get file from FormData ──────────────────────────────────────
     const formData = await req.formData();
     const file = formData.get("file");
@@ -166,8 +185,7 @@ ${extractedText}
 
     return Response.json({
       success: false,
-      message: "Internal Server Error",
-      error: error.message
+      message: error.message || "Internal Server Error"
     }, { status: 500 });
   }
 }
