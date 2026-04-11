@@ -1,3 +1,6 @@
+import DOMMatrix from "@thednp/dommatrix";
+(globalThis as any).DOMMatrix = DOMMatrix;
+
 import { NextRequest } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
