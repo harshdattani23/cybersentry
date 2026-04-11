@@ -88,9 +88,18 @@ export async function POST(req: NextRequest) {
     try {
       console.log("Step 3: Dynamically importing pdfjs-dist");
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+      // Disable worker — run PDF parsing in main thread (Node.js safe)
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+
       console.log("Step 3a: pdfjs-dist loaded, extracting text");
 
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+      const loadingTask = pdfjsLib.getDocument({
+        data: new Uint8Array(buffer),
+        useWorkerFetch: false,
+        isEvalSupported: false,
+        useSystemFonts: true,
+      });
       const pdfDoc = await loadingTask.promise;
 
       for (let i = 1; i <= pdfDoc.numPages; i++) {
