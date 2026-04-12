@@ -89,11 +89,11 @@ export async function POST(req: NextRequest) {
       extractedText = data.text;
       console.log("Step 3a: Extracted", extractedText.length, "characters from", data.numpages, "pages");
     } catch (pdfErr: any) {
-      console.error("[extract-pdf] PDF parsing failed:", pdfErr);
+      console.error("PDF parse error:", pdfErr);
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Failed to parse the PDF file: " + (pdfErr.message || "Unknown error"),
+          error: "This PDF format is not fully supported. Please try another PDF or re-download it.",
         }),
         {
           status: 422,
@@ -102,9 +102,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!extractedText || extractedText.trim().length === 0) {
+    if (!extractedText || extractedText.trim().length < 10) {
       return new Response(
-        JSON.stringify({ success: false, error: "Could not extract any text from the PDF." }),
+        JSON.stringify({ success: false, error: "No readable text found in PDF." }),
         { status: 422, headers: { "Content-Type": "application/json" } }
       );
     }
