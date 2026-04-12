@@ -86,20 +86,21 @@ export async function POST(req: NextRequest) {
     // ── 3. Extract text from PDF (using pdfjs-dist, Node-compatible) ───
     let extractedText = "";
     try {
-      console.log("Step 3: Dynamically importing pdfjs-dist");
+      console.log("Step 3: Importing pdfjs-dist");
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-      // Disable worker — run PDF parsing in main thread (Node.js safe)
+      // Disable worker completely — run in main thread (Node.js safe)
       pdfjsLib.GlobalWorkerOptions.workerSrc = "";
 
       console.log("Step 3a: pdfjs-dist loaded, extracting text");
 
       const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(buffer),
+        disableWorker: true,
         useWorkerFetch: false,
         isEvalSupported: false,
         useSystemFonts: true,
-      });
+      } as any);
       const pdfDoc = await loadingTask.promise;
 
       for (let i = 1; i <= pdfDoc.numPages; i++) {
