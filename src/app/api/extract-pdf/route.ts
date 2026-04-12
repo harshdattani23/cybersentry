@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
 
     // ── 5. Send PDF directly to Gemini ─────────────────────────────────
     console.log("Step 4: Calling Gemini with PDF inline data");
