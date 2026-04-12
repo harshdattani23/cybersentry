@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  serverExternalPackages: ["pdfjs-dist"],
+  serverExternalPackages: ["pdf-parse"],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

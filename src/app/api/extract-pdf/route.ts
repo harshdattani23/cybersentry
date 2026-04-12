@@ -1,9 +1,7 @@
-import DOMMatrix from "@thednp/dommatrix";
-(globalThis as any).DOMMatrix = DOMMatrix;
-
 import { NextRequest } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
+import pdf from "pdf-parse";
 
 export async function POST(req: NextRequest) {
   try {
@@ -83,36 +81,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── 3. Extract text from PDF (using pdfjs-dist, Node-compatible) ───
+    // ── 3. Extract text from PDF (using pdf-parse, Node-compatible) ───
     let extractedText = "";
     try {
-      console.log("Step 3: Importing pdfjs-dist");
-      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-
-      // Disable worker completely — run in main thread (Node.js safe)
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "";
-
-      console.log("Step 3a: pdfjs-dist loaded, extracting text");
-
-      const loadingTask = pdfjsLib.getDocument({
-        data: new Uint8Array(buffer),
-        disableWorker: true,
-        useWorkerFetch: false,
-        isEvalSupported: false,
-        useSystemFonts: true,
-      } as any);
-      const pdfDoc = await loadingTask.promise;
-
-      for (let i = 1; i <= pdfDoc.numPages; i++) {
-        const page = await pdfDoc.getPage(i);
-        const content = await page.getTextContent();
-        const strings = content.items
-          .filter((item: any) => "str" in item)
-          .map((item: any) => item.str);
-        extractedText += strings.join(" ") + "\n\n";
-      }
-
-      console.log("Step 3b: Extracted", extractedText.length, "characters from", pdfDoc.numPages, "pages");
+      console.log("Step 3: Extracting text with pdf-parse");
+      const data = await pdf(buffer);
+      extractedText = data.text;
+      console.log("Step 3a: Extracted", extractedText.length, "characters from", data.numpages, "pages");
     } catch (pdfErr: any) {
       console.error("[extract-pdf] PDF parsing failed:", pdfErr);
       return new Response(
