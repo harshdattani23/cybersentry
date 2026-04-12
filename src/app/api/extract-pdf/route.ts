@@ -85,15 +85,20 @@ export async function POST(req: NextRequest) {
     let extractedText = "";
     try {
       console.log("Step 3: Extracting text with pdf-parse");
+      console.log("Step 3 buffer info:", { length: buffer.length, type: typeof buffer, isBuffer: Buffer.isBuffer(buffer) });
       const data = await pdf(buffer);
       extractedText = data.text;
       console.log("Step 3a: Extracted", extractedText.length, "characters from", data.numpages, "pages");
     } catch (pdfErr: any) {
-      console.error("PDF parse error:", pdfErr);
+      console.error("PDF parse error:", pdfErr?.message || pdfErr);
+      console.error("PDF parse error stack:", pdfErr?.stack);
+
+      // Return user-friendly error with the actual reason logged server-side
       return new Response(
         JSON.stringify({
           success: false,
           error: "This PDF format is not fully supported. Please try another PDF or re-download it.",
+          detail: pdfErr?.message || "Unknown parsing error",
         }),
         {
           status: 422,

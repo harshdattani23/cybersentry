@@ -127,7 +127,7 @@ export default function PublishNewsPage() {
             }
 
             if (!res.ok) {
-                throw new Error(data?.message || text || "Request failed");
+                throw new Error(data?.error || data?.message || "Request failed");
             }
 
             console.log("Parsed API Response:", data);
