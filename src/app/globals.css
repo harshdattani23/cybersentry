@@ -154,7 +154,7 @@
     @apply border-0 border-b border-input font-sans p-3 flex flex-wrap gap-2 sticky;
     top: 5rem;
     background: #ffffff !important;
-    z-index: 50 !important;
+    z-index: 10 !important;
     border-top-left-radius: 0.375rem;
     border-top-right-radius: 0.375rem;
   }
