@@ -66,6 +66,7 @@ export default function PublishNewsPage() {
     const [formData, setFormData] = useState({
         title: "",
         category: "",
+        subcategory: "",
         platform: "",
         summary: "",
         content: "",
@@ -76,18 +77,20 @@ export default function PublishNewsPage() {
     const [imageFile, setImageFile] = useState<File | null>(null);
 
     const mapCategory = (cat: string | undefined): string => {
-        if (!cat) return "Emerging Scam";
+        if (!cat) return "Cybersecurity";
 
         const c = cat.toLowerCase();
 
-        if (c.includes("upi")) return "UPI Fraud";
-        if (c.includes("bank") || c.includes("banking")) return "Banking Fraud";
-        if (c.includes("ai")) return "AI Fraud";
-        if (c.includes("policy") || c.includes("regulation")) return "Policy Update";
-        if (c.includes("advisory") || c.includes("warning")) return "Cyber Advisory";
-        if (c.includes("scam") || c.includes("fraud") || c.includes("phishing")) return "Emerging Scam";
+        if (c.includes("ai") || c.includes("artificial intelligence")) return "AI Updates";
+        if (c.includes("cybercrime") || c.includes("crime") || c.includes("fraud") || c.includes("scam") || c.includes("phishing")) return "Cybercrime Trends";
+        if (c.includes("global") || c.includes("world") || c.includes("international")) return "Global Trends";
+        if (c.includes("governance") || c.includes("internet") || c.includes("regulation")) return "Internet Governance";
+        if (c.includes("event") || c.includes("conference") || c.includes("summit")) return "Events";
+        if (c.includes("internship") || c.includes("job") || c.includes("career") || c.includes("opportunity")) return "Internship and Job Opportunities";
+        if (c.includes("cyber") || c.includes("security") || c.includes("hack")) return "Cybersecurity";
+        if (c.includes("law") || c.includes("policy") || c.includes("legal") || c.includes("act")) return "Laws and Policies";
 
-        return "Emerging Scam";
+        return "Cybersecurity";
     };
 
     const handlePdfChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -282,6 +285,7 @@ export default function PublishNewsPage() {
             const insertPayload = {
                 title: formData.title,
                 category: formData.category,
+                subcategory: formData.subcategory || null,
                 summary: formData.summary,
                 content: formData.content,
                 source: formData.sourceName,
@@ -331,6 +335,7 @@ export default function PublishNewsPage() {
             setFormData({
                 title: "",
                 category: "",
+                subcategory: "",
                 platform: "",
                 summary: "",
                 content: "",
@@ -497,18 +502,58 @@ export default function PublishNewsPage() {
                                     required
                                     className={`flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 ${aiFilledFields.category ? "ai-filled" : ""}`}
                                     value={formData.category}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => {
+                                        handleInputChange(e);
+                                        // Reset subcategory when category changes
+                                        setFormData((prev) => ({ ...prev, subcategory: "" }));
+                                    }}
                                 >
                                     <option value="">Select a category</option>
-                                    <option value="Banking Fraud">Banking Fraud</option>
-                                    <option value="UPI Fraud">UPI Fraud</option>
-                                    <option value="Cyber Advisory">Cyber Advisory</option>
-                                    <option value="Policy Update">Policy Update</option>
-                                    <option value="Emerging Scam">Emerging Scam</option>
-                                    <option value="AI Fraud">AI Fraud</option>
+                                    <option value="AI Updates">AI Updates</option>
+                                    <option value="Cybercrime Trends">Cybercrime Trends</option>
+                                    <option value="Global Trends">Global Trends</option>
+                                    <option value="Internet Governance">Internet Governance</option>
+                                    <option value="Events">Events</option>
+                                    <option value="Internship and Job Opportunities">Internship and Job Opportunities</option>
+                                    <option value="Cybersecurity">Cybersecurity</option>
+                                    <option value="Laws and Policies">Laws and Policies</option>
                                 </select>
                             </div>
                         </div>
+
+                        {/* Subcategory — shown for Cybercrime Trends & Laws and Policies */}
+                        {formData.category === "Cybercrime Trends" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="subcategory">Subcategory <span className="text-red-500">*</span></Label>
+                                <div className="relative">
+                                    <select
+                                        id="subcategory"
+                                        required
+                                        className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                                        value={formData.subcategory}
+                                        onChange={handleInputChange}
+                                    >
+                                        <option value="">Select subcategory</option>
+                                        <option value="News">News</option>
+                                        <option value="Tutorials">Tutorials</option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
+                        {formData.category === "Laws and Policies" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="subcategory">Country <span className="text-red-500">*</span></Label>
+                                <Input
+                                    id="subcategory"
+                                    required
+                                    maxLength={100}
+                                    placeholder="e.g. India, USA, UK"
+                                    value={formData.subcategory}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                        )}
 
                         {/* Platform Involved */}
                         <div className="space-y-2">
