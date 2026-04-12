@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
-import pdf from "pdf-parse";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +38,7 @@ export async function POST(req: NextRequest) {
     // ── 2. Convert to Buffer ───────────────────────────────────────────
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    console.log("Step 2: Buffer created, size:", buffer.length, "bytes");
 
     // ── 2a. Upload PDF to Supabase Storage ─────────────────────────────
     let pdfUrl = "";
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     if (supabaseUrl && supabaseServiceKey && supabaseServiceKey !== "your-supabase-service-role-key-here" && supabaseServiceKey.startsWith("eyJ")) {
       try {
-        console.log("Step 2: Uploading to Supabase");
+        console.log("Step 2a: Uploading to Supabase");
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         const originalName = file instanceof File ? file.name : "document.pdf";
@@ -81,38 +81,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── 3. Extract text from PDF (using pdf-parse, Node-compatible) ───
-    let extractedText = "";
-    try {
-      console.log("Step 3: Extracting text with pdf-parse");
-      console.log("Step 3 buffer info:", { length: buffer.length, type: typeof buffer, isBuffer: Buffer.isBuffer(buffer) });
-      const data = await pdf(buffer);
-      extractedText = data.text;
-      console.log("Step 3a: Extracted", extractedText.length, "characters from", data.numpages, "pages");
-    } catch (pdfErr: any) {
-      console.error("PDF parse error:", pdfErr?.message || pdfErr);
-      console.error("PDF parse error stack:", pdfErr?.stack);
-
-      // Return user-friendly error with the actual reason logged server-side
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "This PDF format is not fully supported. Please try another PDF or re-download it.",
-          detail: pdfErr?.message || "Unknown parsing error",
-        }),
-        {
-          status: 422,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    if (!extractedText || extractedText.trim().length < 10) {
-      return new Response(
-        JSON.stringify({ success: false, error: "No readable text found in PDF." }),
-        { status: 422, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    // ── 3. Convert PDF to base64 for Gemini ────────────────────────────
+    const base64 = buffer.toString("base64");
+    console.log("Step 3: PDF converted to base64, length:", base64.length);
 
     // ── 4. Initialise Gemini ───────────────────────────────────────────
     const apiKey = process.env.GEMINI_API_KEY;
@@ -125,40 +96,48 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    // ── 5. Build prompt ────────────────────────────────────────────────
-    const prompt = `You are a structured-data extraction assistant.
+    // ── 5. Send PDF directly to Gemini ─────────────────────────────────
+    console.log("Step 4: Calling Gemini with PDF inline data");
 
-Analyse the following text extracted from a PDF document and return a JSON object with EXACTLY these keys:
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          mimeType: "application/pdf",
+          data: base64,
+        },
+      },
+      `Extract and structure this cyber fraud news article into JSON.
 
-- "title"    : The title or heading of the document.
-- "category" : The broad category or topic (e.g. "Cybersecurity", "Finance", "Technology").
-- "summary"  : A concise 2-3 sentence summary of the document.
-- "content"  : The main body / key content of the document (can be a longer string).
-- "source"   : The source or publisher, if identifiable from the text. Use "Unknown" if not found.
-- "author"   : The author name(s), if identifiable from the text. Use "Unknown" if not found.
+Return a JSON object with EXACTLY these keys:
+
+{
+  "title": "",
+  "category": "",
+  "summary": "",
+  "content": "",
+  "source": "",
+  "author": ""
+}
 
 Rules:
-1. Return ONLY valid JSON — no markdown fences, no explanation, no extra text.
-2. If a field cannot be determined, use "Unknown" as the value.
+1. Clean formatting with proper sentences
+2. Infer category from content (e.g. "Cybersecurity", "UPI Fraud", "Banking Fraud", "AI Fraud", "Policy Update", "Cyber Advisory", "Emerging Scam")
+3. Keep content readable and well-structured
+4. No markdown formatting in values
+5. If a field cannot be determined, use "Unknown"
+6. Return ONLY valid JSON — no markdown fences, no explanation, no extra text`,
+    ]);
 
---- BEGIN EXTRACTED TEXT ---
-${extractedText}
---- END EXTRACTED TEXT ---`;
-
-    // ── 6. Generate structured response ────────────────────────────────
-    console.log("Step 4: Calling Gemini");
-    const result = await model.generateContent(prompt);
     const rawText = result.response.text();
+    console.log("Step 5: Gemini response received, length:", rawText.length);
 
-    // ── 6a. Clean response — Gemini sometimes wraps JSON in markdown ──
+    // ── 6. Clean & parse response ──────────────────────────────────────
     let cleanText = rawText.trim();
 
     // Remove markdown code fences (```json ... ``` or ``` ... ```)
-    if (cleanText.startsWith("`")) {
-      cleanText = cleanText.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
-    }
+    cleanText = cleanText.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
 
     // Strip any stray text before the first `{` or after the last `}`
     const firstBrace = cleanText.indexOf("{");
@@ -167,10 +146,9 @@ ${extractedText}
       cleanText = cleanText.substring(firstBrace, lastBrace + 1);
     }
 
-    // ── 6b. Safe JSON parse ────────────────────────────────────────────
     let parsed;
     try {
-      console.log("Step 5: Parsing response");
+      console.log("Step 6: Parsing Gemini response");
       parsed = JSON.parse(cleanText);
     } catch {
       console.error("[extract-pdf] Failed to parse AI response:", cleanText);
@@ -185,6 +163,7 @@ ${extractedText}
     }
 
     // ── 7. Return structured data ──────────────────────────────────────
+    console.log("Step 7: Returning parsed data successfully");
     return new Response(
       JSON.stringify({
         success: true,
@@ -199,11 +178,11 @@ ${extractedText}
     return new Response(
       JSON.stringify({
         success: false,
-        message: error.message || "Internal Server Error"
+        error: error.message || "Internal Server Error",
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
