@@ -228,7 +228,7 @@ export default function ResourcesPage() {
                     </div>
 
                     <p className="mt-8 text-xs text-blue-300 opacity-80">
-                        Disclaimer: CyberSentry is an awareness and community reporting initiative. It operates in support of, but distinct from, official law enforcement channels.
+                        Disclaimer: Ministry of Cyber Affairs is an awareness and community reporting initiative. It operates in support of, but distinct from, official law enforcement channels.
                     </p>
                 </section>
 

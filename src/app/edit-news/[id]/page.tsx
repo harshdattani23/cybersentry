@@ -4,9 +4,7 @@ import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import dynamic from 'next/dynamic';
-
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
-import 'react-quill-new/dist/quill.snow.css';
+const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
 import { supabase } from "@/lib/supabase";
 import { editArticleAction } from "@/app/publish-news/actions";
@@ -32,21 +30,6 @@ export default function EditNewsPage() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const quillModules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'script': 'sub'}, { 'script': 'super' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            [{ 'direction': 'rtl' }],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'align': [] }],
-            ['link', 'image', 'video'],
-            ['clean']
-        ],
-    };
 
     const { user, userData, loading } = useAuth();
     const router = useRouter();
@@ -128,14 +111,10 @@ export default function EditNewsPage() {
         }));
     };
 
-    const handleContentChange = (content: string, delta: any, source: string, editor: any) => {
-        if (editor.getLength() - 1 > 2000) {
-            editor.deleteText(2000, editor.getLength());
-            return;
-        }
+    const handleContentChange = (newContent: string) => {
         setFormData((prev) => ({
             ...prev,
-            content,
+            content: newContent,
         }));
     };
 
@@ -188,8 +167,8 @@ export default function EditNewsPage() {
             return;
         }
 
-        if (strippedContent.length > 2000) {
-            setError(`The article content exceeds the 2000 character limit by ${strippedContent.length - 2000} characters.`);
+        if (strippedContent.length > 20000) {
+            setError(`The article content exceeds the 20000 character limit by ${strippedContent.length - 20000} characters.`);
             setSubmitting(false);
             return;
         }
@@ -441,17 +420,21 @@ export default function EditNewsPage() {
                         {/* Full Article Content */}
                         <div className="space-y-2">
                             <Label htmlFor="content" className="text-base font-semibold">Full Article Content <span className="text-red-500">*</span></Label>
-                            <div className="react-quill-wrapper">
-                                <ReactQuill
-                                    theme="snow"
+                            <div>
+                                <JoditEditor
                                     value={formData.content}
-                                    onChange={handleContentChange}
-                                    modules={quillModules}
-                                    placeholder="Write the full news content here..."
+                                    config={{
+                                        readonly: false,
+                                        placeholder: 'Write the full news content here...',
+                                        height: 500,
+                                        uploader: { insertImageAsBase64URI: true },
+                                    }}
+                                    onBlur={(newContent) => handleContentChange(newContent)}
+                                    onChange={() => {}}
                                 />
                             </div>
-                            <p className={`text-xs mt-1 text-right ${formData.content.replace(/<[^>]+>/g, '').trim().length > 2000 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
-                                {formData.content.replace(/<[^>]+>/g, '').trim().length} / 2000
+                            <p className={`text-xs mt-1 text-right ${formData.content.replace(/<[^>]+>/g, '').trim().length > 20000 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+                                {formData.content.replace(/<[^>]+>/g, '').trim().length} / 20000
                             </p>
                         </div>
 

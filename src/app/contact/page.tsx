@@ -62,7 +62,7 @@ export default function ContactPage() {
     return (
         <div className="container mx-auto py-12 px-4 max-w-2xl">
             <div className="text-center mb-10">
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">Contact CyberSentry</h1>
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Contact Ministry of Cyber Affairs</h1>
                 <p className="text-slate-600">Reach out to report issues, share feedback, or request assistance.</p>
             </div>
 
@@ -78,7 +78,7 @@ export default function ContactPage() {
                                 <CheckCircle className="h-4 w-4" />
                                 <AlertTitle>Success</AlertTitle>
                                 <AlertDescription>
-                                    Thank you for contacting CyberSentry. We will get back to you shortly.
+                                    Thank you for contacting Ministry of Cyber Affairs. We will get back to you shortly.
                                 </AlertDescription>
                             </Alert>
                         )}

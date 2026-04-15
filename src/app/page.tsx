@@ -10,10 +10,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const { data: latestNews, error } = await supabase
-      .from('news')
-      .select('*')
-      .order('id', { ascending: false })
-      .limit(12);
+    .from('news')
+    .select('*')
+    .order('id', { ascending: false })
+    .limit(12);
 
   const heroArticle = latestNews && latestNews.length > 0 ? latestNews[0] : null;
   const secondaryArticles = latestNews && latestNews.length > 1 ? latestNews.slice(1, 4) : [];
@@ -26,30 +26,45 @@ export default async function Home() {
         <div className="mb-12 border-b-4 border-brand-primary pb-6 flex flex-col md:flex-row justify-between items-center md:items-end gap-6 text-center md:text-left">
           <div>
             <h1 className="text-5xl md:text-7xl font-black font-headline text-brand-primary tracking-tighter uppercase">
-              The Cyber Sentry
+              The Ministry of Cyber Affairs
             </h1>
             <p className="text-brand-secondary font-bold tracking-[0.2em] uppercase mt-2 text-sm">
               Your Daily Security & Intelligence Briefing
             </p>
           </div>
           <div className="hidden md:flex flex-col items-end">
-             <div className="text-sm font-bold text-slate-500 uppercase tracking-widest border-b border-slate-300 pb-1 mb-1">
-               {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-             </div>
-             <div className="text-xs uppercase text-brand-accent font-black tracking-widest bg-brand-primary text-white px-3 py-1 rounded">
-               Latest Edition
-             </div>
+            <div className="text-sm font-bold text-slate-500 uppercase tracking-widest border-b border-slate-300 pb-1 mb-1">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+            <div className="text-xs uppercase text-brand-accent font-black tracking-widest bg-brand-primary text-white px-3 py-1 rounded">
+              Latest Edition
+            </div>
           </div>
         </div>
 
+        {/* Initiative Intro */}
+        <div className="mb-12 p-6 md:p-8 bg-blue-50/50 border-l-4 border-brand-primary shadow-sm rounded-r-lg">
+          <h2 className="text-lg font-bold font-headline text-brand-primary uppercase tracking-wider mb-4">About the Initiative</h2>
+          <div className="text-slate-700 space-y-3 font-body">
+            <p>
+              &ldquo;Ministry&rdquo; comes from Greek words like <em>diakoneo</em> (&ldquo;to serve&rdquo;) and <em>douleuo</em> (&ldquo;to serve as a slave&rdquo;). The Initiative <strong>Ministry of Cyber Affairs</strong> aims to serve the Cyber Space, by highlighting important events, news related to the cyberworld. This includes cybercrime, cybersecurity, Ai, Digitalisation etc.
+            </p>
+            <p>
+              Platform also aims to highlight the contributions of Cyber Police all around the world, which conventional media does not cover owing to various reasons.
+            </p>
+            <p>
+              Besides, public policy, regulations and Government Guidelines around the world, which actually makes an impact are posted for others countries to learn and implement.
+            </p>
+          </div>
+        </div>
         {!heroArticle ? (
           <div className="py-24 text-center">
-             <p className="text-xl text-slate-500">No news articles found. Be the first to publish.</p>
-             <Link href="/publish-news">
-               <button className="mt-6 bg-brand-primary text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-primary/90">
-                 Publish News
-               </button>
-             </Link>
+            <p className="text-xl text-slate-500">No news articles found. Be the first to publish.</p>
+            <Link href="/publish-news">
+              <button className="mt-6 bg-brand-primary text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-primary/90">
+                Publish News
+              </button>
+            </Link>
           </div>
         ) : (
           <>
@@ -62,9 +77,9 @@ export default async function Home() {
                     <div className="relative w-full h-[300px] md:h-[450px] overflow-hidden bg-slate-100 rounded-xl">
                       <CardImageCarousel images={collectCardImages(heroArticle.image_url, heroArticle.content)} alt={heroArticle.title} />
                       <div className="absolute top-4 left-4 z-20">
-                          <span className="px-3 py-1 text-xs font-black uppercase tracking-widest rounded bg-brand-primary text-white">
-                            {heroArticle.category || "Headline"}
-                          </span>
+                        <span className="px-3 py-1 text-xs font-black uppercase tracking-widest rounded bg-brand-primary text-white">
+                          {heroArticle.category || "Headline"}
+                        </span>
                       </div>
                     </div>
                     <div>
@@ -114,16 +129,16 @@ export default async function Home() {
                     All Coverage <span className="material-symbols-outlined text-sm">arrow_forward</span>
                   </Link>
                 </div>
-                
+
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
                   {standardArticles.map((article: any) => (
                     <Link href={`/news/${generateSlug(article.title)}-${article.id}`} key={article.id} className="group flex flex-col">
                       <div className="relative w-full h-40 overflow-hidden bg-slate-100 rounded-lg mb-4">
                         <CardImageCarousel images={collectCardImages(article.image_url, article.content)} alt={article.title} />
                         <div className="absolute top-2 left-2 z-20">
-                            <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded bg-white/90 text-brand-primary border border-slate-200">
-                              {article.category || "News"}
-                            </span>
+                          <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded bg-white/90 text-brand-primary border border-slate-200">
+                            {article.category || "News"}
+                          </span>
                         </div>
                       </div>
                       <h4 className="text-lg font-bold font-headline text-brand-primary leading-snug group-hover:text-brand-primary/70 transition-colors mb-2">

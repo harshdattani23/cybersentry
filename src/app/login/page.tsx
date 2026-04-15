@@ -43,7 +43,7 @@ export default function LoginPage() {
         <div className="container mx-auto py-16 px-4 max-w-md">
             <Card>
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Log in to CyberSentry</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Log in to Ministry of Cyber Affairs</CardTitle>
                     <CardDescription>
                         Enter your email and password to access the portal.
                     </CardDescription>

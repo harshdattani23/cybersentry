@@ -82,7 +82,7 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
                             </div>
                             <div className="flex items-center">
                                 <User className="mr-2 h-4 w-4 text-slate-400" />
-                                {article.author_name || 'CyberSentry Team'}
+                                {article.author_name || 'Ministry of Cyber Affairs Team'}
                             </div>
                             <div className="flex items-center">
                                 <Globe className="mr-2 h-4 w-4 text-slate-400" />

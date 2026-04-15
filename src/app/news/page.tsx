@@ -5,7 +5,7 @@ import { NewsFilteredGrid } from "@/components/news/NewsFilteredGrid";
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'All News Articles | CyberSentry',
+  title: 'All News Articles | Ministry of Cyber Affairs',
   description: 'Browse all cyber fraud news, advisories, and security alerts submitted by our publishers.',
 };
 

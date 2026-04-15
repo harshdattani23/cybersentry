@@ -403,7 +403,7 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                       <span className="material-symbols-outlined text-sm">
                         verified
                       </span>
-                      Ref: {news.source || "CyberSentry News"}
+                      Ref: {news.source || "Ministry of Cyber Affairs News"}
                     </span>
                     <Link
                       href={`/news/${generateSlug(news.title)}-${news.id}`}

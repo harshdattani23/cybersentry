@@ -8,7 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "CyberSentry India – Cyber News & Updates",
+  title: "Ministry of Cyber Affairs India – Cyber News & Updates",
   description: "Your trusted source for cyber news and updates in India.",
 };
 

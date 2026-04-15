@@ -39,7 +39,7 @@ export function ShareSection() {
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="text-[10px] text-slate-500">
-                                Scanned by CyberSentry<br />
+                                Scanned by Ministry of Cyber Affairs<br />
                                 ID: #9823-A
                             </div>
                             <QrCode className="w-12 h-12 text-slate-900" />

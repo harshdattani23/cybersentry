@@ -4,9 +4,8 @@ import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import dynamic from 'next/dynamic';
+const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false });
 
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
-import 'react-quill-new/dist/quill.snow.css';
 
 import { supabase } from "@/lib/supabase";
 import { publishArticleAction } from "./actions";
@@ -38,21 +37,6 @@ export default function PublishNewsPage() {
         sourceName: false,
     });
 
-    const quillModules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'script': 'sub'}, { 'script': 'super' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            [{ 'direction': 'rtl' }],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'align': [] }],
-            ['link', 'image', 'video'],
-            ['clean']
-        ],
-    };
 
     const { user, userData, loading } = useAuth();
     const router = useRouter();
@@ -178,14 +162,10 @@ export default function PublishNewsPage() {
         }
     };
 
-    const handleContentChange = (content: string, delta: any, source: string, editor: any) => {
-        if (editor.getLength() - 1 > 2000) {
-            editor.deleteText(2000, editor.getLength());
-            return;
-        }
+    const handleContentChange = (newContent: string) => {
         setFormData((prev) => ({
             ...prev,
-            content,
+            content: newContent,
         }));
         if (aiFilledFields.content) {
             setAiFilledFields((prev) => ({ ...prev, content: false }));
@@ -240,8 +220,8 @@ export default function PublishNewsPage() {
             return;
         }
 
-        if (strippedContent.length > 2000) {
-            setError(`The article content exceeds the 2000 character limit by ${strippedContent.length - 2000} characters.`);
+        if (strippedContent.length > 20000) {
+            setError(`The article content exceeds the 20000 character limit by ${strippedContent.length - 20000} characters.`);
             setSubmitting(false);
             return;
         }
@@ -400,7 +380,7 @@ export default function PublishNewsPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-green-700 mb-6">
-                            Our team will review the content for accuracy and relevance. Once approved, it will be published to the CyberSentry India news section.
+                            Our team will review the content for accuracy and relevance. Once approved, it will be published to the Ministry of Cyber Affairs India news section.
                         </p>
                         <Button
                             onClick={() => setSubmitted(false)}
@@ -420,7 +400,7 @@ export default function PublishNewsPage() {
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">Publish Cyber Fraud News Article</h1>
                 <p className="text-slate-600">
-                    Submit verified cyber fraud–related news or advisories for review before being published on CyberSentry India.
+                    Submit verified cyber fraud–related news or advisories for review before being published on Ministry of Cyber Affairs India.
                 </p>
             </div>
 
@@ -603,17 +583,21 @@ export default function PublishNewsPage() {
                                 <Label htmlFor="content" className="text-base font-semibold">Full Article Content <span className="text-red-500">*</span></Label>
                                 {aiFilledFields.content && <span className="ai-badge"><Sparkles className="h-3 w-3" /> AI Suggested</span>}
                             </div>
-                            <div className={`react-quill-wrapper ${aiFilledFields.content ? "ai-filled-quill" : ""}`}>
-                                <ReactQuill
-                                    theme="snow"
+                            <div className={aiFilledFields.content ? "ai-filled-quill border border-blue-400 rounded p-1" : ""}>
+                                <JoditEditor
                                     value={formData.content}
-                                    onChange={handleContentChange}
-                                    modules={quillModules}
-                                    placeholder="Write the full news content here..."
+                                    config={{
+                                        readonly: false,
+                                        placeholder: 'Write the full news content here...',
+                                        height: 500,
+                                        uploader: { insertImageAsBase64URI: true },
+                                    }}
+                                    onBlur={(newContent) => handleContentChange(newContent)}
+                                    onChange={() => {}}
                                 />
                             </div>
-                            <p className={`text-xs mt-1 text-right ${formData.content.replace(/<[^>]+>/g, '').trim().length > 2000 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
-                                {formData.content.replace(/<[^>]+>/g, '').trim().length} / 2000
+                            <p className={`text-xs mt-1 text-right ${formData.content.replace(/<[^>]+>/g, '').trim().length > 20000 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+                                {formData.content.replace(/<[^>]+>/g, '').trim().length} / 20000
                             </p>
                         </div>
 

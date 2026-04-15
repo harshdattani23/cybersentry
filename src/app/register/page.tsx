@@ -55,7 +55,7 @@ export default function RegisterPage() {
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
                     <CardDescription>
-                        Enter your details to register as an author on CyberSentry.
+                        Enter your details to register as an author on Ministry of Cyber Affairs.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

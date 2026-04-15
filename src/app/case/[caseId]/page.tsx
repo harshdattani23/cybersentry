@@ -58,7 +58,7 @@ async function getCaseDetails(id: string): Promise<CaseDetails | null> {
             category: "Pending Classification",
             platform: "Reported Platform",
             identifier: "Pending Verification",
-            summary: "This report has just been submitted by a citizen and is currently queued for initial verification by the CyberSentry automated system.",
+            summary: "This report has just been submitted by a citizen and is currently queued for initial verification by the Ministry of Cyber Affairs automated system.",
             status: "received",
             reportedDate: today,
             views: 1,
@@ -68,7 +68,7 @@ async function getCaseDetails(id: string): Promise<CaseDetails | null> {
                     date: today,
                     time: time,
                     title: "Citizen Report Received",
-                    description: "Report submitted via CyberSentry portal. Case ID generated and queued for verification.",
+                    description: "Report submitted via Ministry of Cyber Affairs portal. Case ID generated and queued for verification.",
                     status: "completed",
                     icon: "check"
                 },
@@ -110,7 +110,7 @@ async function getCaseDetails(id: string): Promise<CaseDetails | null> {
                 date: "2024-03-15",
                 time: "10:30 AM",
                 title: "Citizen Report Received",
-                description: "Anonymous report submitted via CyberSentry portal. Case ID generated.",
+                description: "Anonymous report submitted via Ministry of Cyber Affairs portal. Case ID generated.",
                 status: "completed",
                 icon: "check"
             },
@@ -324,7 +324,7 @@ export default async function CaseDetailsPage({ params }: { params: Promise<{ ca
 
                                         {event.title.includes("Authority") && (
                                             <Badge variant="outline" className="mt-3 text-xs border-blue-200 bg-blue-50 text-blue-800">
-                                                <Building2 className="w-3 h-3 mr-1" /> Verified by CyberSentry
+                                                <Building2 className="w-3 h-3 mr-1" /> Verified by Ministry of Cyber Affairs
                                             </Badge>
                                         )}
                                     </div>

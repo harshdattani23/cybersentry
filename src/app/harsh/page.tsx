@@ -272,7 +272,7 @@ export default function AdminDashboard() {
                     <ShieldCheck className="h-8 w-8 text-blue-800" />
                     <div>
                         <h1 className="text-3xl font-bold text-slate-900">Admin Security Dashboard</h1>
-                        <p className="text-slate-600">Approve publishers and moderate CyberSentry content flow.</p>
+                        <p className="text-slate-600">Approve publishers and moderate Ministry of Cyber Affairs content flow.</p>
                     </div>
                 </div>
 
