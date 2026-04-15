@@ -22,26 +22,39 @@ export async function generateMetadata({
     try {
         const { data: article, error } = await supabase
             .from("news")
-            .select("title, summary, image_url")
+            .select("title, summary, image_url, created_at, author_name, author_email")
             .eq("id", actualId)
             .single();
 
         if (error || !article) {
             return {
-                title: 'Article Not Found - CyberSentry',
+                title: 'Article Not Found - Ministry of Cyber Affairs',
             };
         }
 
+        const authorName = article.author_name || article.author_email || 'Ministry of Cyber Affairs Team';
+
         return {
-            title: `${article.title} - CyberSentry News`,
+            title: `${article.title} - Ministry of Cyber Affairs News`,
             description: article.summary,
-            openGraph: article.image_url ? {
-                images: [article.image_url],
-            } : undefined,
+            openGraph: {
+                title: article.title,
+                description: article.summary,
+                type: 'article',
+                publishedTime: article.created_at,
+                authors: [authorName],
+                ...(article.image_url ? { images: [article.image_url] } : {}),
+            },
+            twitter: {
+                card: 'summary_large_image',
+                title: article.title,
+                description: article.summary,
+                ...(article.image_url ? { images: [article.image_url] } : {}),
+            },
         };
     } catch {
         return {
-            title: 'Article Not Found - CyberSentry',
+            title: 'Article Not Found - Ministry of Cyber Affairs',
         };
     }
 }
@@ -95,7 +108,7 @@ export default async function Page({
                 category: docData.category || "",
                 summary: docData.summary || "",
                 content: docData.content || "",
-                author_name: docData.author_email || docData.author_name || "CyberSentry Team",
+                author_name: docData.author_email || docData.author_name || "Ministry of Cyber Affairs Team",
                 source_name: docData.source || docData.source_name || "Unknown Source",
                 source_url: docData.source_url || null,
                 created_at: docData.created_at || "",
@@ -126,8 +139,27 @@ export default async function Page({
         );
     }
 
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        headline: newsArticle.title,
+        image: newsArticle.image_url ? [newsArticle.image_url] : [],
+        datePublished: newsArticle.created_at,
+        dateModified: newsArticle.created_at, // Using created_at since updated_at isn't fetched separately
+        author: [{
+            '@type': 'Person',
+            name: newsArticle.author_name,
+        }],
+        description: newsArticle.summary,
+    };
+
     return (
         <>
+            {/* JSON-LD Structured Data for Google search and LLMs */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <LogView articleId={newsArticle.id} />
             <NewsArticleClient article={newsArticle} />
         </>
