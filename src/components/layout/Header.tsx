@@ -21,15 +21,11 @@ export function Header() {
           
           {/* Desktop Links */}
           <div className="hidden xl:flex gap-8 items-center">
-            <Link href="/cases" className="text-[15px] font-headline font-bold tracking-tight text-[#44474c] hover:text-[#111c2d] transition-all duration-200">
-              Advisories
-            </Link>
+
             <Link href="/about" className="text-[15px] font-headline font-bold tracking-tight text-[#44474c] hover:text-[#111c2d] transition-all duration-200">
               About Us
             </Link>
-            <Link href="/resources" className="text-[15px] font-headline font-bold tracking-tight text-[#44474c] hover:text-[#111c2d] transition-all duration-200">
-              Resources
-            </Link>
+
             <Link href="/publish-news" className="text-[15px] font-headline font-bold tracking-tight text-[#44474c] hover:text-[#111c2d] transition-all duration-200">
               Publish
             </Link>
@@ -87,15 +83,11 @@ export function Header() {
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
         <div className="xl:hidden absolute top-20 left-0 w-full bg-white border-b border-outline-variant/20 shadow-xl flex flex-col p-4 z-40 max-h-[calc(100vh-5rem)] overflow-y-auto">
-          <Link href="/cases" onClick={() => setIsMobileMenuOpen(false)} className="py-3 font-headline font-bold text-lg text-brand-primary border-b border-slate-100">
-            Advisories
-          </Link>
+
           <Link href="/about" onClick={() => setIsMobileMenuOpen(false)} className="py-3 font-headline font-bold text-lg text-brand-primary border-b border-slate-100">
             About Us
           </Link>
-          <Link href="/resources" onClick={() => setIsMobileMenuOpen(false)} className="py-3 font-headline font-bold text-lg text-brand-primary border-b border-slate-100">
-            Resources
-          </Link>
+
           <Link href="/publish-news" onClick={() => setIsMobileMenuOpen(false)} className="py-3 font-headline font-bold text-lg text-brand-primary border-b border-slate-100">
             Publish
           </Link>
