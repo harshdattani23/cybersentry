@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ChangeEvent, useEffect } from "react";
+import React, { useState, ChangeEvent, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import dynamic from 'next/dynamic';
@@ -40,6 +40,29 @@ export default function PublishNewsPage() {
 
     const { user, userData, loading } = useAuth();
     const router = useRouter();
+    const editorRef = useRef(null);
+
+    const config = useMemo(() => ({
+        readonly: false,
+        placeholder: 'Write the full news content here...',
+        height: 500,
+        uploader: { insertImageAsBase64URI: true },
+        // Fix for pasting: disable confirmation dialogs and set default action
+        askBeforePasteFromWord: false,
+        askBeforePasteHTML: false,
+        defaultActionOnPaste: 'insert_clear_html',
+        buttons: [
+            'bold', 'italic', 'underline', 'strikethrough', '|',
+            'superscript', 'subscript', '|',
+            'ul', 'ol', '|',
+            'outdent', 'indent', '|',
+            'font', 'fontsize', 'brush', 'paragraph', '|',
+            'image', 'table', 'link', '|',
+            'align', 'undo', 'redo', '|',
+            'hr', 'eraser', 'copyformat', '|',
+            'fullsize', 'selectall', 'print', 'source'
+        ],
+    }), []);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -264,8 +287,10 @@ export default function PublishNewsPage() {
             // 3. Construct Payload perfectly matching the actual "news" database schema
             const insertPayload = {
                 title: formData.title,
-                category: formData.category,
-                subcategory: formData.subcategory || null,
+                // Merge subcategory into category if it exists, since the DB column is missing
+                category: formData.subcategory 
+                    ? `${formData.category} (${formData.subcategory})` 
+                    : formData.category,
                 summary: formData.summary,
                 content: formData.content,
                 source: formData.sourceName,
@@ -585,13 +610,9 @@ export default function PublishNewsPage() {
                             </div>
                             <div className={aiFilledFields.content ? "ai-filled-quill border border-blue-400 rounded p-1" : ""}>
                                 <JoditEditor
+                                    ref={editorRef}
                                     value={formData.content}
-                                    config={{
-                                        readonly: false,
-                                        placeholder: 'Write the full news content here...',
-                                        height: 500,
-                                        uploader: { insertImageAsBase64URI: true },
-                                    }}
+                                    config={config}
                                     onBlur={(newContent) => handleContentChange(newContent)}
                                     onChange={() => {}}
                                 />

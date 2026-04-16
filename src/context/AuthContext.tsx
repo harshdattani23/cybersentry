@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 
@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
+    const pendingFetchRef = useRef<string | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -48,6 +49,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }, 4000);
 
         async function fetchUserData(currentUser: User) {
+            // Prevent concurrent overlapping fetches for the same user
+            if (pendingFetchRef.current === currentUser.id) return;
+            pendingFetchRef.current = currentUser.id;
+
             // Guarantee loading state drops after 3s even if Supabase queue freezes
             let dataResolved = false;
             const failSafe = setTimeout(() => {
@@ -102,8 +107,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                             : typeof upsertError === 'object' && upsertError !== null 
                                 ? JSON.stringify(upsertError, Object.getOwnPropertyNames(upsertError)) 
                                 : String(upsertError);
+
+                        // Handle "Lock broken" specifically to avoid noisy error logs
+                        const isLockError = errorDetails.includes("Lock broken") || errorDetails.includes("steal");
                         
-                        console.error(`Failed to auto-create user profile: ${errorDetails}`);
+                        if (isLockError) {
+                            console.warn("User profile sync postponed: Auth lock contested.");
+                        } else {
+                            console.error(`Failed to auto-create user profile: ${errorDetails}`);
+                        }
+                        
                         setUserData(null);
                         try { localStorage.removeItem('cs_userData'); } catch(e){}
                     }
@@ -113,7 +126,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setUserData(null);
             } finally {
                 clearTimeout(failSafe);
-                if (mounted) setLoading(false);
+                if (mounted) {
+                    setLoading(false);
+                    if (pendingFetchRef.current === currentUser.id) {
+                        pendingFetchRef.current = null;
+                    }
+                }
             }
         }
 
@@ -137,9 +155,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const { data: { session }, error } = await supabase.auth.getSession();
                 if (error) {
                     if (error.message.includes('Refresh Token Not Found') || error.message.includes('Invalid Refresh Token')) {
-                        // The user's stored refresh token is invalid (e.g. database wiped or session expired remotely)
-                        // Clear the local state gracefully.
                         await supabase.auth.signOut();
+                    } else if (error.message.includes('Lock broken')) {
+                        // This is a transient locking issue, usually from multiple tabs or HMR.
+                        // We can ignore it as onAuthStateChange will eventually provide the session.
+                        console.warn("Auth session lock contested (transient).");
                     } else {
                         console.error("Session error:", error);
                     }
