@@ -42,7 +42,7 @@ export default function PublishNewsPage() {
     const router = useRouter();
     const editorRef = useRef(null);
 
-    const config = useMemo(() => ({
+    const config: any = useMemo(() => ({
         readonly: false,
         placeholder: 'Write the full news content here...',
         height: 500,
