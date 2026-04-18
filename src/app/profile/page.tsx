@@ -27,6 +27,7 @@ export default function ProfilePage() {
 
     const [formData, setFormData] = useState({
         name: "",
+        pseudo_name: "",
         designation: "",
         bio: "",
         photo_url: "",
@@ -64,6 +65,7 @@ export default function ProfilePage() {
         if (userData) {
             setFormData({
                 name: userData.name || "",
+                pseudo_name: userData.pseudo_name || "",
                 designation: userData.designation || "",
                 bio: userData.bio || "",
                 photo_url: userData.photo_url || "",
@@ -138,6 +140,7 @@ export default function ProfilePage() {
                 id: user.id,
                 email: user.email,
                 name: formData.name,
+                pseudo_name: formData.pseudo_name,
                 designation: formData.designation,
                 bio: formData.bio,
                 photo_url: finalPhotoUrl,
@@ -259,6 +262,21 @@ export default function ProfilePage() {
                             />
                             <p className="text-xs text-slate-400 mt-1 text-right">
                                 {formData.name.length} / 60
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="pseudo_name" className="text-sm font-bold text-brand-primary">Pseudo Name</Label>
+                            <Input
+                                id="pseudo_name"
+                                maxLength={60}
+                                placeholder="Your pseudo name / alias"
+                                className="border-outline-variant/50 focus-visible:ring-brand-accent focus-visible:border-brand-accent transition-all"
+                                value={formData.pseudo_name}
+                                onChange={handleInputChange}
+                            />
+                            <p className="text-xs text-slate-400 mt-1 text-right">
+                                {formData.pseudo_name.length} / 60
                             </p>
                         </div>
 

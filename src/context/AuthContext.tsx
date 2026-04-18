@@ -12,6 +12,7 @@ export interface UserData {
     created_at?: string;
     // New Profile Fields
     name?: string;
+    pseudo_name?: string;
     designation?: string;
     bio?: string;
     photo_url?: string;

@@ -24,21 +24,25 @@ interface NewsFilteredGridProps {
 }
 
 const NEWS_CATEGORIES = [
-  "Banking Fraud",
-  "UPI Fraud",
-  "Cyber Advisory",
-  "Policy Update",
-  "Emerging Scam",
-  "AI Fraud",
+  "AI Updates",
+  "Cybercrime Trends",
+  "Global Trends",
+  "Internet Governance",
+  "Events",
+  "Internship and Job Opportunities",
+  "Cybersecurity",
+  "Laws and Policies",
 ];
 
 const CATEGORY_ICONS: Record<string, string> = {
-  "Banking Fraud": "account_balance",
-  "UPI Fraud": "phone_android",
-  "Cyber Advisory": "shield",
-  "Policy Update": "gavel",
-  "Emerging Scam": "warning",
-  "AI Fraud": "smart_toy",
+  "AI Updates": "smart_toy",
+  "Cybercrime Trends": "warning",
+  "Global Trends": "public",
+  "Internet Governance": "gavel",
+  "Events": "event",
+  "Internship and Job Opportunities": "work",
+  "Cybersecurity": "shield",
+  "Laws and Policies": "menu_book",
 };
 
 export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
@@ -66,8 +70,9 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
           return false;
         }
       }
-      if (selectedCategory && news.category !== selectedCategory) {
-        return false;
+      if (selectedCategory) {
+        const isMatch = news.category === selectedCategory || news.category.startsWith(`${selectedCategory} (`);
+        if (!isMatch) return false;
       }
       if (dateFrom) {
         const articleDate = new Date(news.created_at).setHours(0, 0, 0, 0);
@@ -350,6 +355,7 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
             if (
               news.category?.toLowerCase().includes("fraud") ||
               news.category?.toLowerCase().includes("scam") ||
+              news.category?.toLowerCase().includes("crime") ||
               news.category?.toLowerCase().includes("critical")
             ) {
               badgeColors = "bg-red-100 text-red-700";

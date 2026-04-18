@@ -243,14 +243,14 @@ export default function PublishNewsPage() {
             return;
         }
 
-        if (strippedContent.length > 20000) {
-            setError(`The article content exceeds the 20000 character limit by ${strippedContent.length - 20000} characters.`);
+        if (strippedContent.length > 100000) {
+            setError(`The article content exceeds the 100,000 character limit by ${strippedContent.length - 100000} characters.`);
             setSubmitting(false);
             return;
         }
 
-        if (formData.content.length > 50000) {
-            setError("The article formatting is too large. Please reduce the size of embedded media.");
+        if (formData.content.length > 20000000) {
+            setError("The article media is too large. Please reduce the size or number of embedded images.");
             setSubmitting(false);
             return;
         }
@@ -284,6 +284,8 @@ export default function PublishNewsPage() {
                 console.log("Featured image converted successfully. Size:", Math.round(imageUrl.length / 1024), "KB");
             }
 
+            const authorDisplayName = userData?.pseudo_name || userData?.name || user?.email || "Unknown";
+
             // 3. Construct Payload perfectly matching the actual "news" database schema
             const insertPayload = {
                 title: formData.title,
@@ -295,7 +297,8 @@ export default function PublishNewsPage() {
                 content: formData.content,
                 source: formData.sourceName,
                 source_url: formData.sourceUrl,
-                author_email: userData?.name || user?.email || "Unknown",
+                author_name: authorDisplayName,
+                author_email: user?.email || "Unknown",
                 author_id: user?.id || null,
                 image_url: imageUrl,
                 views: 0
@@ -617,8 +620,8 @@ export default function PublishNewsPage() {
                                     onChange={() => {}}
                                 />
                             </div>
-                            <p className={`text-xs mt-1 text-right ${formData.content.replace(/<[^>]+>/g, '').trim().length > 20000 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
-                                {formData.content.replace(/<[^>]+>/g, '').trim().length} / 20000
+                            <p className={`text-xs mt-1 text-right ${formData.content.replace(/<[^>]+>/g, '').trim().length > 100000 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+                                {formData.content.replace(/<[^>]+>/g, '').trim().length} / 100000
                             </p>
                         </div>
 
@@ -675,7 +678,7 @@ export default function PublishNewsPage() {
                                 id="authorName"
                                 readOnly
                                 className="bg-slate-100 text-slate-500 cursor-not-allowed"
-                                value={userData?.name || user?.email || "Loading..."}
+                                value={userData?.pseudo_name || userData?.name || user?.email || "Loading..."}
                             />
                         </div>
 

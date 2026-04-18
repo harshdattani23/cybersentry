@@ -43,6 +43,7 @@ export default function EditNewsPage() {
     const [formData, setFormData] = useState({
         title: "",
         category: "",
+        subcategory: "",
         platform: "",
         summary: "",
         content: "",
@@ -58,8 +59,11 @@ export default function EditNewsPage() {
         const fetchArticleData = async () => {
             if (!params.id) return;
             const fullIdStr = Array.isArray(params.id) ? params.id[0] : params.id;
-            const idComponents = fullIdStr.split('-');
-            const extractedId = idComponents[idComponents.length - 1];
+            if (!fullIdStr) return;
+
+            // Extract actual UUID if a slug is present (consistent with the news view page)
+            const match = fullIdStr.match(/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$/);
+            const extractedId = match ? match[1] : fullIdStr;
             setArticleId(extractedId);
 
             try {
@@ -76,9 +80,23 @@ export default function EditNewsPage() {
                     if (user && data.author_id !== user.id) {
                         setError("Unauthorized: You are not the author of this article.");
                     } else {
+                        // Parse merged category/subcategory if needed
+                        const cat = data.category || "";
+                        let parsedCategory = cat;
+                        let parsedSubcategory = "";
+
+                        if (cat.includes("(") && cat.includes(")")) {
+                            const m = cat.match(/^(.*) \((.*)\)$/);
+                            if (m) {
+                                parsedCategory = m[1];
+                                parsedSubcategory = m[2];
+                            }
+                        }
+
                         setFormData({
                             title: data.title || "",
-                            category: data.category || "",
+                            category: parsedCategory,
+                            subcategory: parsedSubcategory,
                             platform: data.platform || "",
                             summary: data.summary || "",
                             content: data.content || "",
@@ -167,8 +185,14 @@ export default function EditNewsPage() {
             return;
         }
 
-        if (strippedContent.length > 20000) {
-            setError(`The article content exceeds the 20000 character limit by ${strippedContent.length - 20000} characters.`);
+        if (strippedContent.length > 100000) {
+            setError(`The article content exceeds the 100,000 character limit by ${strippedContent.length - 100000} characters.`);
+            setSubmitting(false);
+            return;
+        }
+
+        if (formData.content.length > 20000000) {
+            setError("The article media is too large. Please reduce the size or number of embedded images.");
             setSubmitting(false);
             return;
         }
@@ -201,14 +225,20 @@ export default function EditNewsPage() {
                 });
             }
 
+            const authorDisplayName = userData?.pseudo_name || userData?.name || user?.email || "Unknown";
+
             const updatePayload = {
                 title: formData.title,
-                category: formData.category,
-                platform: formData.platform,
+                // Merge subcategory into category if it exists, matching the publishing logic
+                category: formData.subcategory 
+                    ? `${formData.category} (${formData.subcategory})` 
+                    : formData.category,
                 summary: formData.summary,
                 content: formData.content,
                 source: formData.sourceName,
                 source_url: formData.sourceUrl,
+                author_name: authorDisplayName,
+                author_email: user?.email || "Unknown",
                 image_url: imageUrl,
             };
 
@@ -365,18 +395,58 @@ export default function EditNewsPage() {
                                     required
                                     className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
                                     value={formData.category}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => {
+                                        handleInputChange(e);
+                                        // Reset subcategory when category changes
+                                        setFormData((prev) => ({ ...prev, subcategory: "" }));
+                                    }}
                                 >
                                     <option value="">Select a category</option>
-                                    <option value="Banking Fraud">Banking Fraud</option>
-                                    <option value="UPI Fraud">UPI Fraud</option>
-                                    <option value="Cyber Advisory">Cyber Advisory</option>
-                                    <option value="Policy Update">Policy Update</option>
-                                    <option value="Emerging Scam">Emerging Scam</option>
-                                    <option value="AI Fraud">AI Fraud</option>
+                                    <option value="AI Updates">AI Updates</option>
+                                    <option value="Cybercrime Trends">Cybercrime Trends</option>
+                                    <option value="Global Trends">Global Trends</option>
+                                    <option value="Internet Governance">Internet Governance</option>
+                                    <option value="Events">Events</option>
+                                    <option value="Internship and Job Opportunities">Internship and Job Opportunities</option>
+                                    <option value="Cybersecurity">Cybersecurity</option>
+                                    <option value="Laws and Policies">Laws and Policies</option>
                                 </select>
                             </div>
                         </div>
+
+                        {/* Subcategory — shown for Cybercrime Trends & Laws and Policies */}
+                        {formData.category === "Cybercrime Trends" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="subcategory">Subcategory <span className="text-red-500">*</span></Label>
+                                <div className="relative">
+                                    <select
+                                        id="subcategory"
+                                        required
+                                        className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+                                        value={formData.subcategory}
+                                        onChange={handleInputChange}
+                                    >
+                                        <option value="">Select subcategory</option>
+                                        <option value="News">News</option>
+                                        <option value="Tutorials">Tutorials</option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
+                        {formData.category === "Laws and Policies" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="subcategory">Country <span className="text-red-500">*</span></Label>
+                                <Input
+                                    id="subcategory"
+                                    required
+                                    maxLength={100}
+                                    placeholder="e.g. India, USA, UK"
+                                    value={formData.subcategory}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                        )}
 
                         {/* Platform Involved */}
                         <div className="space-y-2">
@@ -433,8 +503,8 @@ export default function EditNewsPage() {
                                     onChange={() => {}}
                                 />
                             </div>
-                            <p className={`text-xs mt-1 text-right ${formData.content.replace(/<[^>]+>/g, '').trim().length > 20000 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
-                                {formData.content.replace(/<[^>]+>/g, '').trim().length} / 20000
+                            <p className={`text-xs mt-1 text-right ${formData.content.replace(/<[^>]+>/g, '').trim().length > 100000 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+                                {formData.content.replace(/<[^>]+>/g, '').trim().length} / 100000
                             </p>
                         </div>
 

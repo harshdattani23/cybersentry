@@ -14,8 +14,8 @@ export async function publishArticleAction(insertPayload: any, token: string) {
             return { success: false, error: "Summary must be between 10 and 500 characters." };
         }
         const parsedContentText = insertPayload.content ? insertPayload.content.replace(/<[^>]+>/g, '').trim() : '';
-        if (!insertPayload.content || parsedContentText.length > 20000 || insertPayload.content.length > 50000) {
-            return { success: false, error: "Content is either empty, exceeds the 20000 character limit, or has too much HTML formatting." };
+        if (!insertPayload.content || parsedContentText.length > 100000 || insertPayload.content.length > 20000000) {
+            return { success: false, error: "Content is either empty, exceeds the 100,000 text character limit, or embedded media is too large (max 15MB)." };
         }
         if (!insertPayload.source || insertPayload.source.length > 100) {
             return { success: false, error: "Source name is too long. Max 100 characters allowed." };
@@ -124,8 +124,8 @@ export async function editArticleAction(articleId: string, authorId: string, upd
             return { success: false, error: "Summary must be between 10 and 500 characters." };
         }
         const parsedContentText = updatePayload.content ? updatePayload.content.replace(/<[^>]+>/g, '').trim() : '';
-        if (!updatePayload.content || parsedContentText.length > 20000 || updatePayload.content.length > 50000) {
-            return { success: false, error: "Content is either empty, exceeds the 20000 character limit, or has too much HTML formatting." };
+        if (!updatePayload.content || parsedContentText.length > 100000 || updatePayload.content.length > 20000000) {
+            return { success: false, error: "Content is either empty, exceeds the 100,000 text character limit, or embedded media is too large (max 15MB)." };
         }
         if (!updatePayload.source || updatePayload.source.length > 100) {
             return { success: false, error: "Source name is too long. Max 100 characters allowed." };

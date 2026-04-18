@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
         const insertPayload: Record<string, unknown> = {
             title,
             category,
-            platform: platform || null,
             summary,
             content,
             source,

@@ -22,7 +22,18 @@ export async function generateMetadata({
     try {
         const { data: article, error } = await supabase
             .from("news")
-            .select("title, summary, image_url, created_at, author_name, author_email")
+            .select(`
+                title, 
+                summary, 
+                image_url, 
+                created_at, 
+                author_name, 
+                author_email,
+                author:author_id (
+                    name,
+                    pseudo_name
+                )
+            `)
             .eq("id", actualId)
             .single();
 
@@ -32,7 +43,9 @@ export async function generateMetadata({
             };
         }
 
-        const authorName = article.author_name || article.author_email || 'Ministry of Cyber Affairs Team';
+        // Prioritize Pseudo Name -> Full Name -> Email
+        const authorProfile = (article as any).author;
+        const authorDisplayName = authorProfile?.pseudo_name || authorProfile?.name || article.author_name || article.author_email || 'Ministry of Cyber Affairs Team';
 
         return {
             title: `${article.title} - Ministry of Cyber Affairs News`,
@@ -42,7 +55,7 @@ export async function generateMetadata({
                 description: article.summary,
                 type: 'article',
                 publishedTime: article.created_at,
-                authors: [authorName],
+                authors: [authorDisplayName],
                 ...(article.image_url ? { images: [article.image_url] } : {}),
             },
             twitter: {
@@ -95,20 +108,29 @@ export default async function Page({
     try {
         const { data: docData, error: dbError } = await supabase
             .from("news")
-            .select("*")
+            .select(`
+                *,
+                author:author_id (
+                    name,
+                    pseudo_name
+                )
+            `)
             .eq("id", actualId)
             .single();
 
         if (dbError || !docData) {
             hasError = true;
         } else {
+            const authorProfile = (docData as any).author;
+            const authorDisplayName = authorProfile?.pseudo_name || authorProfile?.name || docData.author_email || docData.author_name || "Ministry of Cyber Affairs Team";
+
             newsArticle = {
                 id: docData.id,
                 title: docData.title || "",
                 category: docData.category || "",
                 summary: docData.summary || "",
                 content: docData.content || "",
-                author_name: docData.author_email || docData.author_name || "Ministry of Cyber Affairs Team",
+                author_name: authorDisplayName,
                 source_name: docData.source || docData.source_name || "Unknown Source",
                 source_url: docData.source_url || null,
                 created_at: docData.created_at || "",
