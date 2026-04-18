@@ -93,6 +93,12 @@ export default function ProfilePage() {
             return;
         }
 
+        if (!formData.pseudo_name.trim()) {
+            setError("Pseudo Name is required.");
+            setSaving(false);
+            return;
+        }
+
         try {
             let finalPhotoUrl = formData.photo_url;
 
@@ -266,9 +272,10 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="pseudo_name" className="text-sm font-bold text-brand-primary">Pseudo Name</Label>
+                            <Label htmlFor="pseudo_name" className="text-sm font-bold text-brand-primary">Pseudo Name <span className="text-red-500">*</span></Label>
                             <Input
                                 id="pseudo_name"
+                                required
                                 maxLength={60}
                                 placeholder="Your pseudo name / alias"
                                 className="border-outline-variant/50 focus-visible:ring-brand-accent focus-visible:border-brand-accent transition-all"

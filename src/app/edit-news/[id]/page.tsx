@@ -211,6 +211,12 @@ export default function EditNewsPage() {
             }
         }
 
+        if (!userData?.pseudo_name) {
+            setError("Pseudo Name is required to edit articles. Please update your profile.");
+            setSubmitting(false);
+            return;
+        }
+
         try {
             let imageUrl: string = existingImageUrl;
 
@@ -225,7 +231,10 @@ export default function EditNewsPage() {
                 });
             }
 
-            const authorDisplayName = userData?.pseudo_name || userData?.name || user?.email || "Unknown";
+            const authorDisplayName = userData?.pseudo_name;
+            if (!authorDisplayName) {
+                throw new Error("Pseudo Name is missing. Please update your profile.");
+            }
 
             const updatePayload = {
                 title: formData.title,
@@ -233,6 +242,7 @@ export default function EditNewsPage() {
                 category: formData.subcategory 
                     ? `${formData.category} (${formData.subcategory})` 
                     : formData.category,
+                platform: formData.platform || null,
                 summary: formData.summary,
                 content: formData.content,
                 source: formData.sourceName,
@@ -326,6 +336,41 @@ export default function EditNewsPage() {
                         >
                             Return Home
                         </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    if (userData && !userData?.pseudo_name) {
+        return (
+            <div className="container mx-auto py-12 px-4 max-w-3xl text-center">
+                <Card className="border-red-200 bg-red-50 shadow-md">
+                    <CardHeader>
+                        <CardTitle className="text-red-800 text-2xl">Pseudo Name Required</CardTitle>
+                        <CardDescription className="text-red-700 text-lg">
+                            An identity is required for news edits.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-red-700 mb-6 font-medium">
+                            Please first create a <strong>"Pseudo Name"</strong> by going to your profile. This is required before you can save changes to your articles.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <Button
+                                onClick={() => router.push("/profile")}
+                                className="bg-red-700 hover:bg-red-800 text-white shadow-lg"
+                            >
+                                Go to Profile Settings
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => router.push("/")}
+                                className="border-red-200 text-red-700 hover:bg-red-100"
+                            >
+                                Return Home
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

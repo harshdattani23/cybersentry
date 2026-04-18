@@ -269,6 +269,12 @@ export default function PublishNewsPage() {
             }
         }
 
+        if (!userData?.pseudo_name) {
+            setError("Pseudo Name is required to publish articles. Please update your profile.");
+            setSubmitting(false);
+            return;
+        }
+
         try {
             let imageUrl: string = "";
 
@@ -284,7 +290,10 @@ export default function PublishNewsPage() {
                 console.log("Featured image converted successfully. Size:", Math.round(imageUrl.length / 1024), "KB");
             }
 
-            const authorDisplayName = userData?.pseudo_name || userData?.name || user?.email || "Unknown";
+            const authorDisplayName = userData?.pseudo_name;
+            if (!authorDisplayName) {
+                throw new Error("Pseudo Name is missing. Please update your profile.");
+            }
 
             // 3. Construct Payload perfectly matching the actual "news" database schema
             const insertPayload = {
@@ -293,6 +302,7 @@ export default function PublishNewsPage() {
                 category: formData.subcategory 
                     ? `${formData.category} (${formData.subcategory})` 
                     : formData.category,
+                platform: formData.platform || null,
                 summary: formData.summary,
                 content: formData.content,
                 source: formData.sourceName,
@@ -390,6 +400,41 @@ export default function PublishNewsPage() {
                         >
                             Return Home
                         </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    if (userData && !userData?.pseudo_name) {
+        return (
+            <div className="container mx-auto py-12 px-4 max-w-3xl text-center">
+                <Card className="border-red-200 bg-red-50 shadow-md">
+                    <CardHeader>
+                        <CardTitle className="text-red-800 text-2xl">Pseudo Name Required</CardTitle>
+                        <CardDescription className="text-red-700 text-lg">
+                            An identity is required for news accountability.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-red-700 mb-6 font-medium">
+                            Please first create a <strong>"Pseudo Name"</strong> by going to your profile. This name will be displayed as the author of your articles.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <Button
+                                onClick={() => router.push("/profile")}
+                                className="bg-red-700 hover:bg-red-800 text-white shadow-lg"
+                            >
+                                Go to Profile Settings
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => router.push("/")}
+                                className="border-red-200 text-red-700 hover:bg-red-100"
+                            >
+                                Return Home
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -671,15 +716,15 @@ export default function PublishNewsPage() {
                             <p className="text-xs text-slate-500">Supported formats: JPG, PNG, WebP. Max size: 5MB.</p>
                         </div>
 
-                        {/* Author Name */}
+                        {/* Pseudo Name */}
                         <div className="space-y-2">
-                            <Label htmlFor="authorName">Author Name <span className="text-red-500">*</span></Label>
-                            <Input
-                                id="authorName"
-                                readOnly
-                                className="bg-slate-100 text-slate-500 cursor-not-allowed"
-                                value={userData?.pseudo_name || userData?.name || user?.email || "Loading..."}
-                            />
+                            <Label htmlFor="authorName">Pseudo Name <span className="text-red-500">*</span></Label>
+                                <Input
+                                    id="authorName"
+                                    readOnly
+                                    className="bg-slate-100 text-slate-500 cursor-not-allowed"
+                                    value={userData?.pseudo_name || "Loading..."}
+                                />
                         </div>
 
                         {/* Declaration */}

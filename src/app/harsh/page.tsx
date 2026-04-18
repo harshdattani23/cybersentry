@@ -226,6 +226,12 @@ export default function AdminDashboard() {
         ? geoLogs
         : geoLogs.filter(log => log.event_type === geoFilter);
 
+    // Create a mapping of user IDs to roles for the EVENT column logic
+    const userRoles: Record<string, string> = {};
+    usersList.forEach(u => {
+        if (u.uid) userRoles[u.uid] = u.role;
+    });
+
     // Stats
     const totalViews = geoLogs.filter(l => l.event_type === 'article_view').length;
     const totalPublishes = geoLogs.filter(l => l.event_type === 'article_publish').length;
@@ -386,10 +392,19 @@ export default function AdminDashboard() {
                                                                 VIEWED
                                                             </Badge>
                                                         ) : (
-                                                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 text-[10px] font-bold gap-1">
-                                                                <Send className="h-3 w-3" />
-                                                                PUBLISHED
-                                                            </Badge>
+                                                            <>
+                                                                {log.user_id && userRoles[log.user_id] === 'admin' ? (
+                                                                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 text-[10px] font-bold gap-1">
+                                                                        <Send className="h-3 w-3" />
+                                                                        PUBLISHED
+                                                                    </Badge>
+                                                                ) : (
+                                                                    <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 text-[10px] font-bold gap-1">
+                                                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                                                        UNDER REVIEW
+                                                                    </Badge>
+                                                                )}
+                                                            </>
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3.5 max-w-[200px]">

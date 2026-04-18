@@ -45,7 +45,7 @@ export async function generateMetadata({
 
         // Prioritize Pseudo Name -> Full Name -> Email
         const authorProfile = (article as any).author;
-        const authorDisplayName = authorProfile?.pseudo_name || authorProfile?.name || article.author_name || article.author_email || 'Ministry of Cyber Affairs Team';
+        const authorDisplayName = authorProfile?.pseudo_name || article.author_name || 'Ministry of Cyber Affairs Team';
 
         return {
             title: `${article.title} - Ministry of Cyber Affairs News`,
@@ -122,7 +122,7 @@ export default async function Page({
             hasError = true;
         } else {
             const authorProfile = (docData as any).author;
-            const authorDisplayName = authorProfile?.pseudo_name || authorProfile?.name || docData.author_email || docData.author_name || "Ministry of Cyber Affairs Team";
+            const authorDisplayName = authorProfile?.pseudo_name || docData.author_name || "Ministry of Cyber Affairs Team";
 
             newsArticle = {
                 id: docData.id,

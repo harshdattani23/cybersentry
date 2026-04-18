@@ -23,6 +23,9 @@ export async function publishArticleAction(insertPayload: any, token: string) {
         if (insertPayload.source_url && insertPayload.source_url.length > 500) {
             return { success: false, error: "Source URL is too long. Max 500 characters allowed." };
         }
+        if (!insertPayload.author_name) {
+            return { success: false, error: "Pseudo Name is required to publish articles. Please update your profile." };
+        }
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -139,6 +142,10 @@ export async function editArticleAction(articleId: string, authorId: string, upd
         
         if (!supabaseUrl || !supabaseKey) {
             return { success: false, error: "Supabase environment variables missing on server." };
+        }
+
+        if (!updatePayload.author_name) {
+            return { success: false, error: "Pseudo Name is required to edit articles. Please update your profile." };
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey, {
