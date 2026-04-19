@@ -66,7 +66,7 @@ export default async function AllNewsPage() {
               <p className="text-brand-secondary">Something went wrong while fetching news articles. Please try again later.</p>
             </div>
           ) : allNews && allNews.length > 0 ? (
-            <NewsFilteredGrid allNews={allNews.map(n => ({
+            <NewsFilteredGrid allNews={allNews.map((n: any) => ({
               ...n,
               image_url: n.image_url
                 ? (n.image_url.startsWith('data:') ? `__base64__` : n.image_url)

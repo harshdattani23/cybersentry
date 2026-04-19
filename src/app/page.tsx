@@ -18,7 +18,7 @@ export default async function Home() {
     .limit(12);
 
   // Strip base64 from image_url to avoid bloating the HTML payload
-  const articles = latestNews?.map(n => ({
+  const articles = latestNews?.map((n: any) => ({
     ...n,
     image_url: n.image_url
       ? (n.image_url.startsWith('data:') ? `__base64__` : n.image_url)
