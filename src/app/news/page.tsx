@@ -66,7 +66,12 @@ export default async function AllNewsPage() {
               <p className="text-brand-secondary">Something went wrong while fetching news articles. Please try again later.</p>
             </div>
           ) : allNews && allNews.length > 0 ? (
-            <NewsFilteredGrid allNews={allNews} />
+            <NewsFilteredGrid allNews={allNews.map(n => ({
+              ...n,
+              image_url: n.image_url
+                ? (n.image_url.startsWith('data:') ? `__base64__` : n.image_url)
+                : null,
+            }))} />
           ) : (
             <div className="text-center py-20">
               <span className="material-symbols-outlined text-6xl text-brand-secondary/40 mb-4 block">inbox</span>

@@ -44,6 +44,12 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 const PAGE_SIZE = 24;
 
+function imgSrc(news: { id: string; image_url: string | null }) {
+  if (!news.image_url) return null;
+  if (news.image_url === '__base64__') return `/api/news-image?id=${news.id}`;
+  return news.image_url;
+}
+
 export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -314,8 +320,8 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                 >
                   {/* Image */}
                   <div className="relative w-full h-48 overflow-hidden bg-surface-container">
-                    {news.image_url ? (
-                      <img src={news.image_url} alt={news.title} className="w-full h-full object-cover" loading="lazy" />
+                    {imgSrc(news) ? (
+                      <img src={imgSrc(news)!} alt={news.title} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
                       <div className="w-full h-full bastion-gradient flex items-center justify-center">
                         <span className="material-symbols-outlined text-5xl text-brand-accent/40">newspaper</span>
