@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { generateSlug } from "@/lib/utils";
+import { NewsImage } from "@/components/news/NewsImage";
 
 interface NewsItem {
   id: string;
@@ -12,7 +13,6 @@ interface NewsItem {
   author_email: string;
   source: string;
   created_at: string;
-  image_url: string | null;
   views: number;
 }
 
@@ -43,12 +43,6 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const PAGE_SIZE = 24;
-
-function imgSrc(news: { id: string; image_url: string | null }) {
-  if (!news.image_url) return null;
-  if (news.image_url === '__base64__') return `/api/news-image?id=${news.id}`;
-  return news.image_url;
-}
 
 export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -320,13 +314,7 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                 >
                   {/* Image */}
                   <div className="relative w-full h-48 overflow-hidden bg-surface-container">
-                    {imgSrc(news) ? (
-                      <img src={imgSrc(news)!} alt={news.title} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="w-full h-full bastion-gradient flex items-center justify-center">
-                        <span className="material-symbols-outlined text-5xl text-brand-accent/40">newspaper</span>
-                      </div>
-                    )}
+                    <NewsImage articleId={news.id} alt={news.title} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute top-3 left-3 z-20">
                       <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border ${badgeColors}`}>

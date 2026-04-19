@@ -12,7 +12,7 @@ export const metadata = {
 export default async function AllNewsPage() {
   const { data: allNews, error, count } = await supabase
     .from('news')
-    .select('id, title, category, summary, source, author_email, created_at, image_url, views', { count: 'exact' })
+    .select('id, title, category, summary, source, author_email, created_at, views', { count: 'exact' })
     .order('id', { ascending: false });
 
   return (
@@ -66,12 +66,7 @@ export default async function AllNewsPage() {
               <p className="text-brand-secondary">Something went wrong while fetching news articles. Please try again later.</p>
             </div>
           ) : allNews && allNews.length > 0 ? (
-            <NewsFilteredGrid allNews={allNews.map((n: any) => ({
-              ...n,
-              image_url: n.image_url
-                ? (n.image_url.startsWith('data:') ? `__base64__` : n.image_url)
-                : null,
-            }))} />
+            <NewsFilteredGrid allNews={allNews} />
           ) : (
             <div className="text-center py-20">
               <span className="material-symbols-outlined text-6xl text-brand-secondary/40 mb-4 block">inbox</span>

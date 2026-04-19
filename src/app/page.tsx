@@ -1,33 +1,20 @@
 import Link from 'next/link';
 import { supabase } from "@/lib/supabase";
 import { generateSlug } from "@/lib/utils";
+import { NewsImage } from "@/components/news/NewsImage";
 
 export const revalidate = 60;
-
-function imgSrc(article: { id: string; image_url: string | null }) {
-  if (!article.image_url) return null;
-  if (article.image_url === '__base64__') return `/api/news-image?id=${article.id}`;
-  return article.image_url;
-}
 
 export default async function Home() {
   const { data: latestNews } = await supabase
     .from('news')
-    .select('id, title, category, summary, source, author_name, created_at, image_url')
+    .select('id, title, category, summary, source, author_name, created_at')
     .order('id', { ascending: false })
     .limit(12);
 
-  // Strip base64 from image_url to avoid bloating the HTML payload
-  const articles = latestNews?.map((n: any) => ({
-    ...n,
-    image_url: n.image_url
-      ? (n.image_url.startsWith('data:') ? `__base64__` : n.image_url)
-      : null,
-  })) ?? [];
-
-  const heroArticle = articles.length > 0 ? articles[0] : null;
-  const secondaryArticles = articles.length > 1 ? articles.slice(1, 4) : [];
-  const standardArticles = articles.length > 4 ? articles.slice(4) : [];
+  const heroArticle = latestNews && latestNews.length > 0 ? latestNews[0] : null;
+  const secondaryArticles = latestNews && latestNews.length > 1 ? latestNews.slice(1, 4) : [];
+  const standardArticles = latestNews && latestNews.length > 4 ? latestNews.slice(4) : [];
 
   return (
     <div className="bg-surface font-body text-on-background min-h-screen">
@@ -97,13 +84,7 @@ export default async function Home() {
               <Link href={`/news/${generateSlug(heroArticle.title)}-${heroArticle.id}`} className="group block">
                 <div className="relative rounded-3xl overflow-hidden bg-brand-primary min-h-[420px] md:min-h-[520px]">
                   <div className="absolute inset-0">
-                    {imgSrc(heroArticle) ? (
-                      <img src={imgSrc(heroArticle)!} alt={heroArticle.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bastion-gradient flex items-center justify-center">
-                        <span className="material-symbols-outlined text-7xl text-brand-accent/30">newspaper</span>
-                      </div>
-                    )}
+                    <NewsImage articleId={heroArticle.id} alt={heroArticle.title} />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand-primary via-brand-primary/70 to-brand-primary/20" />
                   </div>
 
@@ -186,45 +167,36 @@ export default async function Home() {
                 </div>
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {standardArticles.map((article: any) => {
-                    const src = imgSrc(article);
-                    return (
-                      <Link
-                        href={`/news/${generateSlug(article.title)}-${article.id}`}
-                        key={article.id}
-                        className="group flex flex-col rounded-2xl bg-white border border-outline-variant/20 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                      >
-                        <div className="relative w-full h-44 overflow-hidden bg-surface-container">
-                          {src ? (
-                            <img src={src} alt={article.title} className="w-full h-full object-cover" loading="lazy" />
-                          ) : (
-                            <div className="w-full h-full bastion-gradient flex items-center justify-center">
-                              <span className="material-symbols-outlined text-5xl text-brand-accent/40">newspaper</span>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <div className="absolute top-3 left-3 z-20">
-                            <span className="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-full bg-white/95 text-brand-primary shadow-sm">
-                              {article.category || "News"}
-                            </span>
-                          </div>
+                  {standardArticles.map((article: any) => (
+                    <Link
+                      href={`/news/${generateSlug(article.title)}-${article.id}`}
+                      key={article.id}
+                      className="group flex flex-col rounded-2xl bg-white border border-outline-variant/20 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                    >
+                      <div className="relative w-full h-44 overflow-hidden bg-surface-container">
+                        <NewsImage articleId={article.id} alt={article.title} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute top-3 left-3 z-20">
+                          <span className="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-full bg-white/95 text-brand-primary shadow-sm">
+                            {article.category || "News"}
+                          </span>
                         </div>
+                      </div>
 
-                        <div className="p-5 flex flex-col flex-1">
-                          <h4 className="text-[15px] font-bold font-headline text-brand-primary leading-snug group-hover:text-brand-primary/70 transition-colors mb-2 line-clamp-2">
-                            {article.title}
-                          </h4>
-                          <p className="text-sm text-brand-secondary line-clamp-2 mb-4 flex-grow">
-                            {article.summary}
-                          </p>
-                          <div className="flex items-center justify-between pt-4 border-t border-outline-variant/15 text-[10px] text-brand-secondary/60 font-bold uppercase tracking-widest">
-                            <span className="truncate max-w-[120px]">{article.author_name || 'Sentry Desk'}</span>
-                            <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                          </div>
+                      <div className="p-5 flex flex-col flex-1">
+                        <h4 className="text-[15px] font-bold font-headline text-brand-primary leading-snug group-hover:text-brand-primary/70 transition-colors mb-2 line-clamp-2">
+                          {article.title}
+                        </h4>
+                        <p className="text-sm text-brand-secondary line-clamp-2 mb-4 flex-grow">
+                          {article.summary}
+                        </p>
+                        <div className="flex items-center justify-between pt-4 border-t border-outline-variant/15 text-[10px] text-brand-secondary/60 font-bold uppercase tracking-widest">
+                          <span className="truncate max-w-[120px]">{article.author_name || 'Sentry Desk'}</span>
+                          <span>{new Date(article.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                         </div>
-                      </Link>
-                    );
-                  })}
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               </section>
             )}
