@@ -2,16 +2,13 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { collectCardImages } from "@/lib/extractImage";
 import { generateSlug } from "@/lib/utils";
-import { CardImageCarousel } from "@/components/news/CardImageCarousel";
 
 interface NewsItem {
   id: string;
   title: string;
   category: string;
   summary: string;
-  content: string;
   author_email: string;
   source: string;
   created_at: string;
@@ -45,12 +42,15 @@ const CATEGORY_ICONS: Record<string, string> = {
   "Laws and Policies": "menu_book",
 };
 
+const PAGE_SIZE = 24;
+
 export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const uniqueAuthors = useMemo(() => {
     const authors = new Set<string>();
@@ -88,6 +88,10 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
     });
   }, [allNews, searchQuery, selectedCategory, dateFrom, dateTo]);
 
+  // Reset visible count when filters change
+  const visibleNews = filteredNews.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredNews.length;
+
   const hasActiveFilters =
     searchQuery || selectedCategory || dateFrom || dateTo;
 
@@ -96,50 +100,38 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
     setSelectedCategory("");
     setDateFrom("");
     setDateTo("");
+    setVisibleCount(PAGE_SIZE);
   };
 
   return (
     <>
       {/* ── Filter Panel ────────────────────────────────────── */}
       <div className="mb-10">
-        {/* Toggle Button */}
+        {/* Toggle */}
         <button
           onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-          className="group inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-[#0b1225] border border-[#1e2a45] hover:border-brand-accent/50 transition-all duration-300 mb-4 shadow-lg"
+          className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white border border-outline-variant/30 hover:border-brand-primary/30 transition-all duration-200 mb-4 shadow-sm text-brand-primary"
         >
-          <span className="material-symbols-outlined text-brand-accent text-lg">
-            tune
-          </span>
-          <span className="text-white font-bold text-sm tracking-wide">
-            Filter Articles
-          </span>
-          <span
-            className={`material-symbols-outlined text-slate-400 text-sm transition-transform duration-300 ${isFiltersOpen ? "rotate-180" : ""}`}
-          >
+          <span className="material-symbols-outlined text-brand-accent text-base">tune</span>
+          <span className="font-bold text-sm">Filter Articles</span>
+          <span className={`material-symbols-outlined text-brand-secondary text-sm transition-transform duration-200 ${isFiltersOpen ? "rotate-180" : ""}`}>
             expand_more
           </span>
           {hasActiveFilters && (
-            <span className="w-2.5 h-2.5 rounded-full bg-brand-accent animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-brand-accent" />
           )}
         </button>
 
-        {/* Filter Panel */}
-        <div
-          className={`transition-all duration-500 ease-in-out overflow-hidden ${isFiltersOpen ? "max-h-[700px] opacity-100" : "max-h-0 opacity-0"}`}
-        >
-          <div className="relative rounded-3xl bg-[#0b1225] border border-[#1e2a45] p-8 shadow-2xl overflow-hidden">
-            {/* Decorative glow */}
-            <div className="absolute -top-20 -right-20 w-60 h-60 bg-brand-accent/8 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/5 rounded-full blur-[80px] pointer-events-none" />
+        {/* Panel Body */}
+        <div className={`transition-all duration-400 ease-in-out overflow-hidden ${isFiltersOpen ? "max-h-[700px] opacity-100" : "max-h-0 opacity-0"}`}>
+          <div className="rounded-2xl bg-white border border-outline-variant/20 p-6 md:p-8 shadow-sm">
 
-            {/* Filter Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-              {/* Search Articles */}
-              <div className="space-y-2.5">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest">
-                  <span className="material-symbols-outlined text-brand-accent text-sm">
-                    search
-                  </span>
+            {/* Filter Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Search */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[11px] font-bold text-brand-secondary uppercase tracking-widest">
+                  <span className="material-symbols-outlined text-brand-accent text-sm">search</span>
                   Search Articles
                 </label>
                 <div className="relative">
@@ -147,9 +139,9 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                     type="text"
                     placeholder="Search by title or author..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
                     list="author-suggestions"
-                    className="w-full px-4 py-3 rounded-xl bg-[#141d33] border border-[#253352] text-white placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300"
+                    className="w-full px-4 py-3 rounded-xl bg-surface border border-outline-variant/30 text-brand-primary placeholder:text-brand-secondary/40 text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/15 transition-all"
                   />
                   <datalist id="author-suggestions">
                     {uniqueAuthors.map((author) => (
@@ -159,64 +151,56 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-secondary/50 hover:text-brand-primary transition-colors"
                     >
-                      <span className="material-symbols-outlined text-sm">
-                        close
-                      </span>
+                      <span className="material-symbols-outlined text-sm">close</span>
                     </button>
                   )}
                 </div>
               </div>
 
               {/* Date From */}
-              <div className="space-y-2.5">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest">
-                  <span className="material-symbols-outlined text-brand-accent text-sm">
-                    calendar_month
-                  </span>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[11px] font-bold text-brand-secondary uppercase tracking-widest">
+                  <span className="material-symbols-outlined text-brand-accent text-sm">calendar_month</span>
                   Date From
                 </label>
                 <input
                   type="date"
                   value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  onChange={(e) => { setDateFrom(e.target.value); setVisibleCount(PAGE_SIZE); }}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 rounded-xl bg-[#141d33] border border-[#253352] text-white text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300 [color-scheme:dark]"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-outline-variant/30 text-brand-primary text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/15 transition-all"
                 />
               </div>
 
               {/* Date To */}
-              <div className="space-y-2.5">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest">
-                  <span className="material-symbols-outlined text-brand-accent text-sm">
-                    event
-                  </span>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[11px] font-bold text-brand-secondary uppercase tracking-widest">
+                  <span className="material-symbols-outlined text-brand-accent text-sm">event</span>
                   Date To
                 </label>
                 <input
                   type="date"
                   value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  onChange={(e) => { setDateTo(e.target.value); setVisibleCount(PAGE_SIZE); }}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 rounded-xl bg-[#141d33] border border-[#253352] text-white text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300 [color-scheme:dark]"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-outline-variant/30 text-brand-primary text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/15 transition-all"
                 />
               </div>
 
-              {/* Category Dropdown */}
-              <div className="space-y-2.5">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest">
-                  <span className="material-symbols-outlined text-brand-accent text-sm">
-                    category
-                  </span>
+              {/* Category */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[11px] font-bold text-brand-secondary uppercase tracking-widest">
+                  <span className="material-symbols-outlined text-brand-accent text-sm">category</span>
                   Category
                 </label>
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-[#141d33] border border-[#253352] text-white text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300 appearance-none cursor-pointer [color-scheme:dark]"
+                  onChange={(e) => { setSelectedCategory(e.target.value); setVisibleCount(PAGE_SIZE); }}
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-outline-variant/30 text-brand-primary text-sm font-medium focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/15 transition-all appearance-none cursor-pointer"
                   style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23515f74' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`,
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "right 0.75rem center",
                     backgroundSize: "1.25rem",
@@ -224,120 +208,77 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                 >
                   <option value="">All Categories</option>
                   {NEWS_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Category Pills (quick select) */}
-            <div className="mt-6 flex flex-wrap gap-2.5 relative z-10">
+            {/* Category Pills */}
+            <div className="mt-6 flex flex-wrap gap-2 pt-5 border-t border-outline-variant/15">
               <button
-                onClick={() => setSelectedCategory("")}
-                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold tracking-wide transition-all duration-300 ${
+                onClick={() => { setSelectedCategory(""); setVisibleCount(PAGE_SIZE); }}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 ${
                   selectedCategory === ""
-                    ? "bg-brand-accent text-white shadow-lg shadow-brand-accent/30"
-                    : "bg-[#141d33] text-slate-300 border border-[#253352] hover:border-brand-accent/40 hover:text-white"
+                    ? "bg-brand-primary text-white shadow-md"
+                    : "bg-surface text-brand-secondary border border-outline-variant/30 hover:border-brand-primary/30 hover:text-brand-primary"
                 }`}
               >
-                <span className="material-symbols-outlined text-sm">
-                  apps
-                </span>
+                <span className="material-symbols-outlined text-sm">apps</span>
                 All
               </button>
               {NEWS_CATEGORIES.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() =>
-                    setSelectedCategory(selectedCategory === cat ? "" : cat)
-                  }
-                  className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold tracking-wide transition-all duration-300 ${
+                  onClick={() => { setSelectedCategory(selectedCategory === cat ? "" : cat); setVisibleCount(PAGE_SIZE); }}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 ${
                     selectedCategory === cat
-                      ? "bg-brand-accent text-white shadow-lg shadow-brand-accent/30"
-                      : "bg-[#141d33] text-slate-300 border border-[#253352] hover:border-brand-accent/40 hover:text-white"
+                      ? "bg-brand-primary text-white shadow-md"
+                      : "bg-surface text-brand-secondary border border-outline-variant/30 hover:border-brand-primary/30 hover:text-brand-primary"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-sm">
-                    {CATEGORY_ICONS[cat] || "label"}
-                  </span>
+                  <span className="material-symbols-outlined text-sm">{CATEGORY_ICONS[cat] || "label"}</span>
                   {cat}
                 </button>
               ))}
             </div>
 
-            {/* Active Filter Summary & Clear */}
+            {/* Active Filters Summary */}
             {hasActiveFilters && (
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-[#1e2a45] relative z-10">
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-outline-variant/15">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-sm text-slate-400 font-medium">
-                    Showing{" "}
-                    <span className="text-brand-accent font-bold text-base">
-                      {filteredNews.length}
-                    </span>{" "}
-                    of{" "}
-                    <span className="text-white font-bold text-base">
-                      {allNews.length}
-                    </span>{" "}
-                    articles
+                  <span className="text-sm text-brand-secondary">
+                    Showing <span className="text-brand-primary font-bold">{filteredNews.length}</span> of <span className="text-brand-primary font-bold">{allNews.length}</span> articles
                   </span>
-                  {/* Active filter tags */}
                   <div className="flex flex-wrap gap-2">
                     {searchQuery && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-accent/15 text-brand-accent text-xs font-bold border border-brand-accent/20">
-                        <span className="material-symbols-outlined text-xs">
-                          search
-                        </span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-accent/10 text-brand-primary text-xs font-bold border border-brand-accent/20">
+                        <span className="material-symbols-outlined text-xs">search</span>
                         {searchQuery}
-                        <button
-                          onClick={() => setSearchQuery("")}
-                          className="ml-1 hover:text-white transition-colors text-base leading-none"
-                        >
-                          ×
-                        </button>
+                        <button onClick={() => setSearchQuery("")} className="ml-1 hover:text-red-500 transition-colors text-base leading-none">x</button>
                       </span>
                     )}
                     {selectedCategory && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-accent/15 text-brand-accent text-xs font-bold border border-brand-accent/20">
-                        <span className="material-symbols-outlined text-xs">
-                          category
-                        </span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-accent/10 text-brand-primary text-xs font-bold border border-brand-accent/20">
+                        <span className="material-symbols-outlined text-xs">category</span>
                         {selectedCategory}
-                        <button
-                          onClick={() => setSelectedCategory("")}
-                          className="ml-1 hover:text-white transition-colors text-base leading-none"
-                        >
-                          ×
-                        </button>
+                        <button onClick={() => setSelectedCategory("")} className="ml-1 hover:text-red-500 transition-colors text-base leading-none">x</button>
                       </span>
                     )}
                     {(dateFrom || dateTo) && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-accent/15 text-brand-accent text-xs font-bold border border-brand-accent/20">
-                        <span className="material-symbols-outlined text-xs">
-                          date_range
-                        </span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-accent/10 text-brand-primary text-xs font-bold border border-brand-accent/20">
+                        <span className="material-symbols-outlined text-xs">date_range</span>
                         {dateFrom || "..."} → {dateTo || "..."}
-                        <button
-                          onClick={() => {
-                            setDateFrom("");
-                            setDateTo("");
-                          }}
-                          className="ml-1 hover:text-white transition-colors text-base leading-none"
-                        >
-                          ×
-                        </button>
+                        <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="ml-1 hover:text-red-500 transition-colors text-base leading-none">x</button>
                       </span>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={clearAllFilters}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/15 text-red-400 text-xs font-bold border border-red-500/20 hover:bg-red-500/25 hover:text-red-300 transition-all duration-300"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 border border-red-200 transition-all duration-200"
                 >
-                  <span className="material-symbols-outlined text-sm">
-                    filter_list_off
-                  </span>
+                  <span className="material-symbols-outlined text-sm">filter_list_off</span>
                   Clear All
                 </button>
               </div>
@@ -347,107 +288,114 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
       </div>
 
       {/* ── Results Grid ────────────────────────────────────── */}
-      {filteredNews.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredNews.map((news, index) => {
-            const cardImages = collectCardImages(news.image_url, news.content);
-            let badgeColors = "bg-brand-accent/20 text-[#008f5d]";
-            if (
-              news.category?.toLowerCase().includes("fraud") ||
-              news.category?.toLowerCase().includes("scam") ||
-              news.category?.toLowerCase().includes("crime") ||
-              news.category?.toLowerCase().includes("critical")
-            ) {
-              badgeColors = "bg-red-100 text-red-700";
-            } else if (
-              news.category?.toLowerCase().includes("warning") ||
-              news.category?.toLowerCase().includes("alert")
-            ) {
-              badgeColors = "bg-amber-100 text-amber-700";
-            }
+      {visibleNews.length > 0 ? (
+        <>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleNews.map((news, index) => {
+              let badgeColors = "bg-emerald-50 text-emerald-700 border-emerald-100";
+              if (
+                news.category?.toLowerCase().includes("fraud") ||
+                news.category?.toLowerCase().includes("scam") ||
+                news.category?.toLowerCase().includes("crime") ||
+                news.category?.toLowerCase().includes("critical")
+              ) {
+                badgeColors = "bg-red-50 text-red-700 border-red-100";
+              } else if (
+                news.category?.toLowerCase().includes("warning") ||
+                news.category?.toLowerCase().includes("alert")
+              ) {
+                badgeColors = "bg-amber-50 text-amber-700 border-amber-100";
+              }
 
-            return (
-              <div
-                key={news.id}
-                className="bg-white rounded-[2rem] shadow-sm border border-outline-variant/20 flex flex-col hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 overflow-hidden"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                {/* Card Image Carousel */}
-                <div className="relative w-full h-48 overflow-hidden bg-gradient-to-br from-surface-container to-surface-container-high">
-                  <CardImageCarousel images={cardImages} alt={news.title} />
-                  <div className="absolute top-4 left-4 z-20">
-                    <span
-                      className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${badgeColors} backdrop-blur-sm`}
-                    >
-                      {news.category || "News"}
-                    </span>
-                  </div>
-                  {news.created_at && (
-                    <div className="absolute top-4 right-4 z-20">
-                      <span className="px-3 py-1 text-[10px] font-bold rounded-full bg-white/90 text-brand-secondary backdrop-blur-sm">
-                        {new Date(news.created_at).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+              return (
+                <div
+                  key={news.id}
+                  className="group bg-white rounded-2xl border border-outline-variant/20 flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                >
+                  {/* Image */}
+                  <div className="relative w-full h-48 overflow-hidden bg-surface-container">
+                    {news.image_url ? (
+                      <img src={news.image_url} alt={news.title} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full bastion-gradient flex items-center justify-center">
+                        <span className="material-symbols-outlined text-5xl text-brand-accent/40">newspaper</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute top-3 left-3 z-20">
+                      <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border ${badgeColors}`}>
+                        {news.category || "News"}
                       </span>
                     </div>
-                  )}
-                </div>
-                {/* Card Content */}
-                <div className="p-8 flex flex-col flex-1">
-                  <Link href={`/news/${generateSlug(news.title)}-${news.id}`} target="_blank">
-                    <h4 className="text-xl font-bold font-headline mb-4 text-brand-primary leading-tight group-hover:text-brand-primary/70 transition-colors uppercase cursor-pointer">
-                      {news.title}
-                    </h4>
-                  </Link>
-                  <p className="text-brand-secondary mb-8 line-clamp-3 leading-relaxed">
-                    {news.summary}
-                  </p>
-                  <div className="mt-auto pt-6 border-t border-outline-variant/10 flex items-center justify-between">
-                    <span className="text-xs font-bold text-brand-primary flex items-center gap-2">
-                      <span className="material-symbols-outlined text-sm">
-                        verified
-                      </span>
-                      Ref: {news.source || "Ministry of Cyber Affairs News"}
-                    </span>
-                    <Link
-                      href={`/news/${generateSlug(news.title)}-${news.id}`}
-                      target="_blank"
-                      className="text-xs font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1"
-                    >
-                      Read More
-                      <span className="material-symbols-outlined text-sm">
-                        open_in_new
-                      </span>
+                    {news.created_at && (
+                      <div className="absolute top-3 right-3 z-20">
+                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-white/95 text-brand-secondary shadow-sm">
+                          {new Date(news.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-6 flex flex-col flex-1">
+                    <Link href={`/news/${generateSlug(news.title)}-${news.id}`} target="_blank">
+                      <h4 className="text-lg font-bold font-headline mb-3 text-brand-primary leading-snug group-hover:text-brand-primary/70 transition-colors cursor-pointer line-clamp-2">
+                        {news.title}
+                      </h4>
                     </Link>
+                    <p className="text-brand-secondary text-sm mb-6 line-clamp-3 leading-relaxed">
+                      {news.summary}
+                    </p>
+                    <div className="mt-auto pt-4 border-t border-outline-variant/15 flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-brand-secondary/70 flex items-center gap-1.5 truncate max-w-[55%]">
+                        <span className="material-symbols-outlined text-xs text-brand-accent">verified</span>
+                        {news.source || "Ministry of Cyber Affairs News"}
+                      </span>
+                      <Link
+                        href={`/news/${generateSlug(news.title)}-${news.id}`}
+                        target="_blank"
+                        className="text-[11px] font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1 shrink-0"
+                      >
+                        Read
+                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+
+          {/* Load More */}
+          {hasMore && (
+            <div className="text-center mt-12">
+              <button
+                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-brand-primary text-white font-bold text-sm hover:bg-brand-primary/90 transition-all shadow-lg"
+              >
+                <span className="material-symbols-outlined text-sm">expand_more</span>
+                Load More Articles
+              </button>
+              <p className="text-xs text-brand-secondary/60 mt-3">
+                Showing {visibleNews.length} of {filteredNews.length} articles
+              </p>
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-20">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#0b1225] border border-[#1e2a45] mb-6">
-            <span className="material-symbols-outlined text-4xl text-slate-400">
-              search_off
-            </span>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-surface-container mb-6">
+            <span className="material-symbols-outlined text-4xl text-brand-secondary/40">search_off</span>
           </div>
-          <h3 className="font-headline text-2xl font-bold text-brand-primary mb-3">
-            No Articles Found
-          </h3>
+          <h3 className="font-headline text-2xl font-bold text-brand-primary mb-3">No Articles Found</h3>
           <p className="text-brand-secondary mb-8 max-w-md mx-auto">
-            No articles match your current filters. Try adjusting your search
-            criteria or clearing the filters.
+            No articles match your current filters. Try adjusting your search criteria or clearing the filters.
           </p>
           <button
             onClick={clearAllFilters}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-accent text-white font-bold text-sm hover:bg-brand-accent/90 transition-all duration-300 shadow-lg shadow-brand-accent/25"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-primary text-white font-bold text-sm hover:bg-brand-primary/90 transition-all shadow-lg"
           >
-            <span className="material-symbols-outlined text-sm">
-              filter_list_off
-            </span>
+            <span className="material-symbols-outlined text-sm">filter_list_off</span>
             Clear All Filters
           </button>
         </div>
