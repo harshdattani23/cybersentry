@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { Calendar, User, Globe, ArrowLeft, Pencil } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { NewsImage } from "@/components/news/NewsImage";
 
 export interface NewsArticle {
     id: string;
@@ -105,11 +105,9 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
 
                     {article.image_url && (
                         <div className="rounded-xl overflow-hidden shadow-lg mb-8 bg-slate-100 border border-slate-200 relative aspect-video">
-                            <Image
-                                src={article.image_url}
+                            <NewsImage
+                                articleId={article.id}
                                 alt={article.title}
-                                className="object-cover"
-                                fill
                             />
                         </div>
                     )}

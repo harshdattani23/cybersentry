@@ -5,8 +5,14 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { LogView } from "@/components/news/LogView";
 import { NewsArticleClient, NewsArticle } from "@/components/news/NewsArticleClient";
+import { headers } from "next/headers";
 
 export const dynamic = 'force-dynamic';
+
+function extractUUID(slug: string): string {
+    const match = slug.match(/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$/);
+    return match ? match[1] : slug;
+}
 
 export async function generateMetadata({
     params,
@@ -14,21 +20,17 @@ export async function generateMetadata({
     params: Promise<{ id: string }>;
 }): Promise<Metadata> {
     const { id } = await params;
-    
-    // Extract actual UUID if a slug is present
-    const match = id.match(/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$/);
-    const actualId = match ? match[1] : id;
+    const actualId = extractUUID(id);
 
     try {
         const { data: article, error } = await supabase
             .from("news")
             .select(`
-                title, 
-                summary, 
-                image_url, 
-                created_at, 
-                author_name, 
-                author_email,
+                id,
+                title,
+                summary,
+                created_at,
+                author_name,
                 author:author_id (
                     name,
                     pseudo_name
@@ -38,14 +40,12 @@ export async function generateMetadata({
             .single();
 
         if (error || !article) {
-            return {
-                title: 'Article Not Found - Ministry of Cyber Affairs',
-            };
+            return { title: 'Article Not Found - Ministry of Cyber Affairs' };
         }
 
-        // Prioritize Pseudo Name -> Full Name -> Email
         const authorProfile = (article as any).author;
         const authorDisplayName = authorProfile?.pseudo_name || article.author_name || 'Ministry of Cyber Affairs Team';
+        const imageUrl = `/api/news-image?id=${article.id}`;
 
         return {
             title: `${article.title} - Ministry of Cyber Affairs News`,
@@ -56,19 +56,17 @@ export async function generateMetadata({
                 type: 'article',
                 publishedTime: article.created_at,
                 authors: [authorDisplayName],
-                ...(article.image_url ? { images: [article.image_url] } : {}),
+                images: [imageUrl],
             },
             twitter: {
                 card: 'summary_large_image',
                 title: article.title,
                 description: article.summary,
-                ...(article.image_url ? { images: [article.image_url] } : {}),
+                images: [imageUrl],
             },
         };
     } catch {
-        return {
-            title: 'Article Not Found - Ministry of Cyber Affairs',
-        };
+        return { title: 'Article Not Found - Ministry of Cyber Affairs' };
     }
 }
 
@@ -78,14 +76,8 @@ export default async function Page({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
+    const actualId = extractUUID(id);
 
-    // Extract actual UUID if a slug is present
-    const match = id.match(/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$/);
-    const actualId = match ? match[1] : id;
-
-    console.log("Article ID:", actualId);
-
-    // Guard: if id is missing or empty, show not found
     if (!id) {
         return (
             <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center text-center min-h-[60vh]">
@@ -94,9 +86,7 @@ export default async function Page({
                     The news article you are looking for does not exist or has been removed.
                 </p>
                 <Link href="/">
-                    <Button>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
-                    </Button>
+                    <Button><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Button>
                 </Link>
             </div>
         );
@@ -109,7 +99,8 @@ export default async function Page({
         const { data: docData, error: dbError } = await supabase
             .from("news")
             .select(`
-                *,
+                id, title, category, summary, content, source, source_name, source_url,
+                created_at, platform, status, author_name, author_id,
                 author:author_id (
                     name,
                     pseudo_name
@@ -134,7 +125,7 @@ export default async function Page({
                 source_name: docData.source || docData.source_name || "Unknown Source",
                 source_url: docData.source_url || null,
                 created_at: docData.created_at || "",
-                image_url: docData.image_url || null,
+                image_url: `/api/news-image?id=${docData.id}`,
                 platform: docData.platform || null,
                 status: docData.status || "",
                 author_id: docData.author_id || null,
@@ -153,9 +144,7 @@ export default async function Page({
                     The news article you are looking for does not exist or has been removed.
                 </p>
                 <Link href="/">
-                    <Button>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
-                    </Button>
+                    <Button><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Button>
                 </Link>
             </div>
         );
@@ -165,9 +154,9 @@ export default async function Page({
         '@context': 'https://schema.org',
         '@type': 'NewsArticle',
         headline: newsArticle.title,
-        image: newsArticle.image_url ? [newsArticle.image_url] : [],
+        image: [`/api/news-image?id=${newsArticle.id}`],
         datePublished: newsArticle.created_at,
-        dateModified: newsArticle.created_at, // Using created_at since updated_at isn't fetched separately
+        dateModified: newsArticle.created_at,
         author: [{
             '@type': 'Person',
             name: newsArticle.author_name,
@@ -177,7 +166,6 @@ export default async function Page({
 
     return (
         <>
-            {/* JSON-LD Structured Data for Google search and LLMs */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
