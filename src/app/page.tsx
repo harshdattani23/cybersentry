@@ -9,7 +9,7 @@ export default async function Home() {
   const { data: latestNews } = await supabase
     .from('news')
     .select('id, title, category, summary, source, author_name, created_at')
-    .order('id', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(12);
 
   const heroArticle = latestNews && latestNews.length > 0 ? latestNews[0] : null;

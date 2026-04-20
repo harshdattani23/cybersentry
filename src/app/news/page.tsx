@@ -13,7 +13,7 @@ export default async function AllNewsPage() {
   const { data: allNews, error, count } = await supabase
     .from('news')
     .select('id, title, category, summary, source, author_email, created_at, views', { count: 'exact' })
-    .order('id', { ascending: false });
+    .order('created_at', { ascending: false });
 
   return (
     <div className="bg-surface font-body text-on-background min-h-screen">
