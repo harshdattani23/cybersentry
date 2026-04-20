@@ -332,7 +332,7 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
 
                   {/* Body */}
                   <div className="p-6 flex flex-col flex-1">
-                    <Link href={`/news/${generateSlug(news.title)}-${news.id}`} target="_blank">
+                    <Link href={`/news/${generateSlug(news.title)}-${news.id}`}>
                       <h4 className="text-lg font-bold font-headline mb-3 text-brand-primary leading-snug group-hover:text-brand-primary/70 transition-colors cursor-pointer line-clamp-2">
                         {news.title}
                       </h4>
@@ -347,7 +347,6 @@ export function NewsFilteredGrid({ allNews }: NewsFilteredGridProps) {
                       </span>
                       <Link
                         href={`/news/${generateSlug(news.title)}-${news.id}`}
-                        target="_blank"
                         className="text-[11px] font-bold uppercase tracking-widest text-brand-primary hover:text-brand-accent transition-colors flex items-center gap-1 shrink-0"
                       >
                         Read
