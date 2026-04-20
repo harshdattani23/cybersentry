@@ -129,6 +129,7 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
                     {/* Main Content (HTML rendered safely with wrap-around protection) */}
                     <div 
                         className="leading-relaxed text-slate-800 news-content-html break-words overflow-hidden"
+                        suppressHydrationWarning={true}
                         dangerouslySetInnerHTML={{ 
                             __html: article.content
                                 .replace(/&nbsp;/g, ' ')
