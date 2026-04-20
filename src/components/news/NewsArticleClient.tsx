@@ -133,9 +133,6 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
                         dangerouslySetInnerHTML={{ 
                             __html: article.content
                                 .replace(/&nbsp;/g, ' ')
-                                .replace(/<p[^>]*>\s*(<table[\s\S]*?<\/table>)\s*<\/p>/gi, '$1')
-                                .replace(/<table(.*?)>/gi, '<span class="block w-full overflow-x-auto my-6 rounded-xl border border-outline-variant/30 custom-table-wrapper"><table$1>')
-                                .replace(/<\/table>/gi, '</table></span>')
                         }}
                     />
                 </div>

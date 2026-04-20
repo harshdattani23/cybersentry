@@ -203,15 +203,25 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Responsive Tables inside News Content */
+  /* Bulletproof Responsive Tables */
   .news-content-html table {
-    @apply w-full border-collapse m-0;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-collapse: collapse !important;
+    margin: 1.5rem 0 !important;
+    background-color: white;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(81, 95, 116, 0.2) !important;
   }
 
   .news-content-html th,
   .news-content-html td {
-    @apply p-3 border border-outline-variant/30;
-    min-width: 120px;
+    padding: 0.75rem 1rem !important;
+    border: 1px solid rgba(81, 95, 116, 0.2) !important;
+    min-width: 120px !important;
   }
 
   .news-content-html th {
