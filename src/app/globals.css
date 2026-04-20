@@ -202,6 +202,22 @@
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* Responsive Tables inside News Content */
+  .news-content-html table {
+    @apply block w-full overflow-x-auto border-collapse my-6;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .news-content-html th,
+  .news-content-html td {
+    @apply p-3 border border-outline-variant/30;
+    min-width: 120px;
+  }
+
+  .news-content-html th {
+    @apply font-bold bg-surface-container-high/50;
+  }
 }
 
 @layer utilities {
