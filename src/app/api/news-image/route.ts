@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   if (!base64Match) {
     // It's a regular URL — redirect to it
-    return NextResponse.redirect(data.image_url);
+    return NextResponse.redirect(finalUrl);
   }
 
   const contentType = base64Match[1];
