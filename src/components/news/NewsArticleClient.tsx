@@ -130,7 +130,10 @@ export function NewsArticleClient({ article }: NewsArticleClientProps) {
                     <div 
                         className="leading-relaxed text-slate-800 news-content-html break-words overflow-hidden"
                         dangerouslySetInnerHTML={{ 
-                            __html: article.content.replace(/&nbsp;/g, ' ') 
+                            __html: article.content
+                                .replace(/&nbsp;/g, ' ')
+                                .replace(/<table(.*?)>/gi, '<div class="w-full overflow-x-auto my-6 rounded-xl border border-outline-variant/30 custom-table-wrapper"><table$1>')
+                                .replace(/<\/table>/gi, '</table></div>')
                         }}
                     />
                 </div>
