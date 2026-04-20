@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { extractFirstImageFromHtml } from "@/lib/extractImage";
 
 export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get("id");
@@ -9,15 +10,25 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("news")
-    .select("image_url")
+    .select("image_url, content")
     .eq("id", id)
     .single();
 
-  if (error || !data?.image_url) {
+  if (error || !data) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const base64Match = data.image_url.match(
+  let finalUrl = data.image_url;
+
+  if (!finalUrl && data.content) {
+      finalUrl = extractFirstImageFromHtml(data.content);
+  }
+
+  if (!finalUrl) {
+      return NextResponse.json({ error: "No image found" }, { status: 404 });
+  }
+
+  const base64Match = finalUrl.match(
     /^data:(image\/\w+);base64,(.+)$/
   );
 

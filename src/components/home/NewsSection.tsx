@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Calendar, Newspaper, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { generateSlug } from "@/lib/utils";
+import { NewsImage } from "@/components/news/NewsImage";
 
 interface NewsArticle {
     id: string;
@@ -32,7 +33,6 @@ export function NewsSection() {
                 const { data, error } = await supabase
                     .from("news")
                     .select("*")
-                    .eq("status", "published")
                     .order("created_at", { ascending: false })
                     .limit(6);
 
@@ -100,11 +100,9 @@ export function NewsSection() {
                                             <div className="h-32 w-full bg-slate-100 relative border-b border-slate-100">
                                                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                                                     {article.image_url ? (
-                                                        <Image
-                                                            src={article.image_url}
+                                                        <NewsImage
+                                                            articleId={article.id}
                                                             alt={article.title}
-                                                            className="object-cover"
-                                                            fill
                                                         />
                                                     ) : (
                                                         <div className="text-slate-300">

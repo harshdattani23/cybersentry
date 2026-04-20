@@ -99,8 +99,7 @@ export default async function Page({
         const { data: docData, error: dbError } = await supabase
             .from("news")
             .select(`
-                id, title, category, summary, content, source, source_name, source_url,
-                created_at, platform, status, author_name, author_id,
+                *,
                 author:author_id (
                     name,
                     pseudo_name
